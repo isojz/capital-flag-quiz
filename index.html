@@ -53,22 +53,22 @@
     background: var(--panel);
     border: 1px solid var(--line-soft);
     border-radius: 16px;
-    padding: 20px 16px 18px;
+    padding: 18px 14px 16px;
     margin-top: 6px;
   }
-  .qtype { text-align: center; font-size: .72rem; color: var(--muted); letter-spacing: .1em; margin-bottom: 12px; }
+  .qtype { text-align: center; font-size: .72rem; color: var(--muted); letter-spacing: .1em; margin-bottom: 10px; }
   .qtype b { color: var(--gold); }
 
-  .flag-stage { display: flex; justify-content: center; margin: 4px 0 16px; }
+  .flag-stage { display: flex; justify-content: center; margin: 2px 0 12px; }
   .flag-stage img {
-    width: 200px; max-width: 68vw; height: auto;
+    width: 180px; max-width: 62vw; height: auto;
     border-radius: 8px;
     border: 1px solid var(--line-soft);
     box-shadow: 0 6px 20px rgba(0,0,0,.4);
     background: #fff;
   }
   .capital-stage {
-    text-align: center; margin: 8px 0 18px;
+    text-align: center; margin: 6px 0 14px;
   }
   .capital-stage .cap {
     font-size: 1.9rem; font-weight: 800; color: var(--text);
@@ -76,33 +76,33 @@
   }
   .capital-stage .hint { font-size: .78rem; color: var(--muted); margin-top: 6px; }
 
-  .ask { text-align: center; font-size: 1rem; font-weight: 700; margin-bottom: 14px; color: var(--text); }
+  .ask { text-align: center; font-size: .95rem; font-weight: 700; margin-bottom: 12px; color: var(--text); }
 
-  /* ---- text options ---- */
-  .opts { display: flex; flex-direction: column; gap: 10px; }
+  /* ---- text options (10択・コンパクト縦リスト) ---- */
+  .opts { display: flex; flex-direction: column; gap: 8px; }
   .opt {
     background: var(--cell);
     border: 1.5px solid var(--line-soft);
     color: var(--text);
-    border-radius: 12px;
-    padding: 14px 16px;
-    font-size: 1rem; font-weight: 600;
+    border-radius: 11px;
+    padding: 12px 14px;
+    font-size: .96rem; font-weight: 600;
     text-align: left;
     cursor: pointer;
     transition: background .12s, border-color .12s, transform .05s;
     display: flex; align-items: center; gap: 10px;
   }
   .opt:active { transform: scale(.985); }
-  .opt .badge { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--muted); flex: none; display: grid; place-items: center; font-size: .8rem; }
+  .opt .badge { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--muted); flex: none; display: grid; place-items: center; font-size: .7rem; color: var(--muted); }
 
-  /* ---- flag options (grid) ---- */
-  .opts.flags { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .opts.flags .opt { padding: 10px; justify-content: center; }
-  .opts.flags .opt img { width: 100%; height: auto; border-radius: 6px; background: #fff; pointer-events: none; }
+  /* ---- flag options (10択・2列グリッド) ---- */
+  .opts.flags { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .opts.flags .opt { padding: 8px; justify-content: center; }
+  .opts.flags .opt img { width: 100%; height: auto; border-radius: 5px; background: #fff; pointer-events: none; display: block; }
 
   .opt.correct { background: var(--green); border-color: var(--green-line); }
   .opt.wrong { background: var(--red-bg); border-color: var(--red); }
-  .opt.dim { opacity: .45; }
+  .opt.dim { opacity: .4; }
   .opt[disabled] { cursor: default; }
 
   /* ---- feedback + next ---- */
@@ -153,7 +153,7 @@
 <div class="app">
   <header>
     <h1>🌍 首都<span class="em">＆</span>国旗クイズ</h1>
-    <div class="sub">ランダム30問 ・ 国旗と首都を当てよう</div>
+    <div class="sub">ランダム30問 ・ 10択 ・ 似たものが紛れ込む</div>
   </header>
 
   <!-- START -->
@@ -161,8 +161,9 @@
     <div class="big">🗺️</div>
     <p>
       世界60カ国から<b style="color:var(--text)">ランダムに30問</b>。<br>
-      「国旗 → 首都」と「首都 → 国旗」の<br>2タイプを混ぜて出題します。<br>
-      4択でサクッと腕試し。
+      「国旗 → 首都」と「首都 → 国旗」の2タイプ。<br>
+      選択肢は<b style="color:var(--text)">10択</b>で、<br>
+      <b style="color:var(--gold)">同じ地域の首都</b>や<b style="color:var(--gold)">似た国旗</b>を<br>わざと混ぜてくる。油断禁物。
     </p>
     <button class="btn" id="startBtn">スタート</button>
   </section>
@@ -199,77 +200,90 @@
 </div>
 
 <script>
-/* ===== 国データ（国名 / ISO2小文字 / 首都） =====
-   複数首都・帰属で議論のある国（イスラエル/南ア/ボリビア/スリランカ/タンザニア等）は
-   良問にならないため意図的に除外。首都は「引っかけ」になる正確な公式首都。 */
+/* ===== 国データ =====
+   n:国名 / c:ISO2(小文字) / cap:首都
+   region:地域(首都問題の「似た誘惑肢」用) / cont:大陸(補充用)
+   flag:国旗の見た目タグ(国旗問題の「似た誘惑肢」用・複数可)
+   複数首都/帰属で揉める国は良問にならないため意図的に除外。 */
 const COUNTRIES = [
-  { n:"日本", c:"jp", cap:"東京" },
-  { n:"中国", c:"cn", cap:"北京" },
-  { n:"韓国", c:"kr", cap:"ソウル" },
-  { n:"インド", c:"in", cap:"ニューデリー" },
-  { n:"タイ", c:"th", cap:"バンコク" },
-  { n:"ベトナム", c:"vn", cap:"ハノイ" },
-  { n:"インドネシア", c:"id", cap:"ジャカルタ" },
-  { n:"フィリピン", c:"ph", cap:"マニラ" },
-  { n:"マレーシア", c:"my", cap:"クアラルンプール" },
-  { n:"シンガポール", c:"sg", cap:"シンガポール" },
-  { n:"モンゴル", c:"mn", cap:"ウランバートル" },
-  { n:"ネパール", c:"np", cap:"カトマンズ" },
-  { n:"パキスタン", c:"pk", cap:"イスラマバード" },
-  { n:"バングラデシュ", c:"bd", cap:"ダッカ" },
-  { n:"サウジアラビア", c:"sa", cap:"リヤド" },
-  { n:"アラブ首長国連邦", c:"ae", cap:"アブダビ" },
-  { n:"イラン", c:"ir", cap:"テヘラン" },
-  { n:"イラク", c:"iq", cap:"バグダッド" },
-  { n:"トルコ", c:"tr", cap:"アンカラ" },
-  { n:"カザフスタン", c:"kz", cap:"アスタナ" },
-  { n:"ロシア", c:"ru", cap:"モスクワ" },
-  { n:"ドイツ", c:"de", cap:"ベルリン" },
-  { n:"フランス", c:"fr", cap:"パリ" },
-  { n:"イギリス", c:"gb", cap:"ロンドン" },
-  { n:"イタリア", c:"it", cap:"ローマ" },
-  { n:"スペイン", c:"es", cap:"マドリード" },
-  { n:"ポルトガル", c:"pt", cap:"リスボン" },
-  { n:"オランダ", c:"nl", cap:"アムステルダム" },
-  { n:"ベルギー", c:"be", cap:"ブリュッセル" },
-  { n:"スイス", c:"ch", cap:"ベルン" },
-  { n:"オーストリア", c:"at", cap:"ウィーン" },
-  { n:"スウェーデン", c:"se", cap:"ストックホルム" },
-  { n:"ノルウェー", c:"no", cap:"オスロ" },
-  { n:"デンマーク", c:"dk", cap:"コペンハーゲン" },
-  { n:"フィンランド", c:"fi", cap:"ヘルシンキ" },
-  { n:"ポーランド", c:"pl", cap:"ワルシャワ" },
-  { n:"チェコ", c:"cz", cap:"プラハ" },
-  { n:"ハンガリー", c:"hu", cap:"ブダペスト" },
-  { n:"ギリシャ", c:"gr", cap:"アテネ" },
-  { n:"アイルランド", c:"ie", cap:"ダブリン" },
-  { n:"ウクライナ", c:"ua", cap:"キーウ" },
-  { n:"ルーマニア", c:"ro", cap:"ブカレスト" },
-  { n:"ブルガリア", c:"bg", cap:"ソフィア" },
-  { n:"クロアチア", c:"hr", cap:"ザグレブ" },
-  { n:"セルビア", c:"rs", cap:"ベオグラード" },
-  { n:"アメリカ合衆国", c:"us", cap:"ワシントンD.C." },
-  { n:"カナダ", c:"ca", cap:"オタワ" },
-  { n:"メキシコ", c:"mx", cap:"メキシコシティ" },
-  { n:"ブラジル", c:"br", cap:"ブラジリア" },
-  { n:"アルゼンチン", c:"ar", cap:"ブエノスアイレス" },
-  { n:"チリ", c:"cl", cap:"サンティアゴ" },
-  { n:"ペルー", c:"pe", cap:"リマ" },
-  { n:"コロンビア", c:"co", cap:"ボゴタ" },
-  { n:"ベネズエラ", c:"ve", cap:"カラカス" },
-  { n:"キューバ", c:"cu", cap:"ハバナ" },
-  { n:"エジプト", c:"eg", cap:"カイロ" },
-  { n:"ナイジェリア", c:"ng", cap:"アブジャ" },
-  { n:"ケニア", c:"ke", cap:"ナイロビ" },
-  { n:"エチオピア", c:"et", cap:"アディスアベバ" },
-  { n:"モロッコ", c:"ma", cap:"ラバト" },
-  { n:"アルジェリア", c:"dz", cap:"アルジェ" },
-  { n:"ガーナ", c:"gh", cap:"アクラ" },
-  { n:"オーストラリア", c:"au", cap:"キャンベラ" },
-  { n:"ニュージーランド", c:"nz", cap:"ウェリントン" }
+  // --- 東アジア ---
+  { n:"日本", c:"jp", cap:"東京", region:"east_asia", cont:"asia", flag:["circle","sun"] },
+  { n:"中国", c:"cn", cap:"北京", region:"east_asia", cont:"asia", flag:["red_star"] },
+  { n:"韓国", c:"kr", cap:"ソウル", region:"east_asia", cont:"asia", flag:["white_field"] },
+  { n:"モンゴル", c:"mn", cap:"ウランバートル", region:"east_asia", cont:"asia", flag:["red_blue"] },
+  // --- 東南アジア ---
+  { n:"タイ", c:"th", cap:"バンコク", region:"sea", cont:"asia", flag:["stripes_h"] },
+  { n:"ベトナム", c:"vn", cap:"ハノイ", region:"sea", cont:"asia", flag:["red_star"] },
+  { n:"インドネシア", c:"id", cap:"ジャカルタ", region:"sea", cont:"asia", flag:["red_white_h"] },
+  { n:"フィリピン", c:"ph", cap:"マニラ", region:"sea", cont:"asia", flag:["blue_red"] },
+  { n:"マレーシア", c:"my", cap:"クアラルンプール", region:"sea", cont:"asia", flag:["stripes_star","crescent"] },
+  { n:"シンガポール", c:"sg", cap:"シンガポール", region:"sea", cont:"asia", flag:["red_white_h","crescent"] },
+  // --- 南アジア ---
+  { n:"インド", c:"in", cap:"ニューデリー", region:"south_asia", cont:"asia", flag:["tricolor_h","emblem"] },
+  { n:"ネパール", c:"np", cap:"カトマンズ", region:"south_asia", cont:"asia", flag:["nonrect"] },
+  { n:"パキスタン", c:"pk", cap:"イスラマバード", region:"south_asia", cont:"asia", flag:["crescent","green"] },
+  { n:"バングラデシュ", c:"bd", cap:"ダッカ", region:"south_asia", cont:"asia", flag:["circle","green"] },
+  // --- 中東・中央アジア ---
+  { n:"サウジアラビア", c:"sa", cap:"リヤド", region:"mideast", cont:"asia", flag:["green","arabic"] },
+  { n:"アラブ首長国連邦", c:"ae", cap:"アブダビ", region:"mideast", cont:"asia", flag:["pan_arab"] },
+  { n:"イラン", c:"ir", cap:"テヘラン", region:"mideast", cont:"asia", flag:["tricolor_h","green"] },
+  { n:"イラク", c:"iq", cap:"バグダッド", region:"mideast", cont:"asia", flag:["pan_arab","arabic"] },
+  { n:"トルコ", c:"tr", cap:"アンカラ", region:"mideast", cont:"asia", flag:["crescent","red"] },
+  { n:"カザフスタン", c:"kz", cap:"アスタナ", region:"c_asia", cont:"asia", flag:["blue","sun"] },
+  // --- ヨーロッパ ---
+  { n:"ロシア", c:"ru", cap:"モスクワ", region:"e_europe", cont:"europe", flag:["tricolor_h"] },
+  { n:"ドイツ", c:"de", cap:"ベルリン", region:"w_europe", cont:"europe", flag:["tricolor_h"] },
+  { n:"フランス", c:"fr", cap:"パリ", region:"w_europe", cont:"europe", flag:["tricolor_v"] },
+  { n:"イギリス", c:"gb", cap:"ロンドン", region:"w_europe", cont:"europe", flag:["unionjack"] },
+  { n:"イタリア", c:"it", cap:"ローマ", region:"s_europe", cont:"europe", flag:["tricolor_v"] },
+  { n:"スペイン", c:"es", cap:"マドリード", region:"s_europe", cont:"europe", flag:["red_yellow"] },
+  { n:"ポルトガル", c:"pt", cap:"リスボン", region:"s_europe", cont:"europe", flag:["green_red","emblem"] },
+  { n:"オランダ", c:"nl", cap:"アムステルダム", region:"w_europe", cont:"europe", flag:["tricolor_h"] },
+  { n:"ベルギー", c:"be", cap:"ブリュッセル", region:"w_europe", cont:"europe", flag:["tricolor_v"] },
+  { n:"スイス", c:"ch", cap:"ベルン", region:"w_europe", cont:"europe", flag:["cross_sq"] },
+  { n:"オーストリア", c:"at", cap:"ウィーン", region:"w_europe", cont:"europe", flag:["tricolor_h"] },
+  { n:"スウェーデン", c:"se", cap:"ストックホルム", region:"n_europe", cont:"europe", flag:["nordic"] },
+  { n:"ノルウェー", c:"no", cap:"オスロ", region:"n_europe", cont:"europe", flag:["nordic"] },
+  { n:"デンマーク", c:"dk", cap:"コペンハーゲン", region:"n_europe", cont:"europe", flag:["nordic"] },
+  { n:"フィンランド", c:"fi", cap:"ヘルシンキ", region:"n_europe", cont:"europe", flag:["nordic"] },
+  { n:"ポーランド", c:"pl", cap:"ワルシャワ", region:"e_europe", cont:"europe", flag:["red_white_h"] },
+  { n:"チェコ", c:"cz", cap:"プラハ", region:"e_europe", cont:"europe", flag:["triangle"] },
+  { n:"ハンガリー", c:"hu", cap:"ブダペスト", region:"e_europe", cont:"europe", flag:["tricolor_h"] },
+  { n:"ギリシャ", c:"gr", cap:"アテネ", region:"s_europe", cont:"europe", flag:["stripes_blue"] },
+  { n:"アイルランド", c:"ie", cap:"ダブリン", region:"w_europe", cont:"europe", flag:["tricolor_v"] },
+  { n:"ウクライナ", c:"ua", cap:"キーウ", region:"e_europe", cont:"europe", flag:["blue_yellow"] },
+  { n:"ルーマニア", c:"ro", cap:"ブカレスト", region:"e_europe", cont:"europe", flag:["tricolor_v"] },
+  { n:"ブルガリア", c:"bg", cap:"ソフィア", region:"e_europe", cont:"europe", flag:["tricolor_h"] },
+  { n:"クロアチア", c:"hr", cap:"ザグレブ", region:"e_europe", cont:"europe", flag:["tricolor_h","emblem"] },
+  { n:"セルビア", c:"rs", cap:"ベオグラード", region:"e_europe", cont:"europe", flag:["tricolor_h","emblem"] },
+  // --- 北米・中米 ---
+  { n:"アメリカ合衆国", c:"us", cap:"ワシントンD.C.", region:"n_america", cont:"americas", flag:["stars_stripes"] },
+  { n:"カナダ", c:"ca", cap:"オタワ", region:"n_america", cont:"americas", flag:["red_white_v","emblem"] },
+  { n:"メキシコ", c:"mx", cap:"メキシコシティ", region:"n_america", cont:"americas", flag:["tricolor_v","emblem"] },
+  { n:"キューバ", c:"cu", cap:"ハバナ", region:"n_america", cont:"americas", flag:["stars_stripes","triangle"] },
+  // --- 南米 ---
+  { n:"ブラジル", c:"br", cap:"ブラジリア", region:"s_america", cont:"americas", flag:["green","globe"] },
+  { n:"アルゼンチン", c:"ar", cap:"ブエノスアイレス", region:"s_america", cont:"americas", flag:["stripes_blue","sun"] },
+  { n:"チリ", c:"cl", cap:"サンティアゴ", region:"s_america", cont:"americas", flag:["stars_stripes"] },
+  { n:"ペルー", c:"pe", cap:"リマ", region:"s_america", cont:"americas", flag:["red_white_v"] },
+  { n:"コロンビア", c:"co", cap:"ボゴタ", region:"s_america", cont:"americas", flag:["stripes_yellow"] },
+  { n:"ベネズエラ", c:"ve", cap:"カラカス", region:"s_america", cont:"americas", flag:["tricolor_h_yellow"] },
+  // --- アフリカ ---
+  { n:"エジプト", c:"eg", cap:"カイロ", region:"africa", cont:"africa", flag:["pan_arab"] },
+  { n:"ナイジェリア", c:"ng", cap:"アブジャ", region:"africa", cont:"africa", flag:["tricolor_v_green"] },
+  { n:"ケニア", c:"ke", cap:"ナイロビ", region:"africa", cont:"africa", flag:["pan_africa","stripes_h"] },
+  { n:"エチオピア", c:"et", cap:"アディスアベバ", region:"africa", cont:"africa", flag:["pan_africa","emblem"] },
+  { n:"モロッコ", c:"ma", cap:"ラバト", region:"africa", cont:"africa", flag:["red","star"] },
+  { n:"アルジェリア", c:"dz", cap:"アルジェ", region:"africa", cont:"africa", flag:["crescent","green"] },
+  { n:"ガーナ", c:"gh", cap:"アクラ", region:"africa", cont:"africa", flag:["pan_africa","star"] },
+  // --- オセアニア ---
+  { n:"オーストラリア", c:"au", cap:"キャンベラ", region:"oceania", cont:"oceania", flag:["unionjack"] },
+  { n:"ニュージーランド", c:"nz", cap:"ウェリントン", region:"oceania", cont:"oceania", flag:["unionjack"] }
 ];
 
 const TOTAL = 30;
+const CHOICES = 10;       // 選択肢の数
+const DISTRACT = CHOICES - 1;
 const flagUrl = (code, w) => `https://flagcdn.com/w${w||320}/${code}.png`;
 
 // --- utils ---
@@ -281,31 +295,45 @@ function shuffle(arr){
   }
   return a;
 }
-function sample(pool, n, exclude){
-  const picked = [];
-  const src = shuffle(pool);
-  for(const item of src){
-    if(picked.length>=n) break;
-    if(exclude && exclude.includes(item)) continue;
-    picked.push(item);
+
+/* 似た誘惑肢を優先して n 個集める。
+   tiers = [最優先候補, 次点, 全体] の順に、足りるまで詰める。 */
+function pickDistractors(correct, n, type){
+  const pool = COUNTRIES.filter(x => x.c !== correct.c);
+  let tiers;
+  if(type === "cap2flag"){
+    // 国旗を当てる → 見た目が似た国旗を優先
+    const sameFlag = pool.filter(x => x.flag.some(f => correct.flag.includes(f)));
+    const sameCont = pool.filter(x => x.cont === correct.cont);
+    tiers = [sameFlag, sameCont, pool];
+  } else {
+    // 首都を当てる → 同じ地域の首都を優先
+    const sameRegion = pool.filter(x => x.region === correct.region);
+    const sameCont   = pool.filter(x => x.cont === correct.cont);
+    tiers = [sameRegion, sameCont, pool];
   }
-  return picked;
+  const chosen = [], seen = new Set();
+  for(const tier of tiers){
+    for(const item of shuffle(tier)){
+      if(chosen.length >= n) break;
+      if(seen.has(item.c)) continue;
+      seen.add(item.c); chosen.push(item);
+    }
+    if(chosen.length >= n) break;
+  }
+  return chosen.slice(0, n);
 }
 
 // --- state ---
 let questions = [];
-let idx = 0;
-let score = 0;
-let answered = false;
+let idx = 0, score = 0, answered = false;
 const wrongs = [];
 
-// --- build questions ---
 function buildQuestions(){
   const targets = shuffle(COUNTRIES).slice(0, TOTAL);
-  return targets.map((country, i) => {
-    // タイプを交互＋ランダムで散らす（偏り防止）
+  return targets.map(country => {
     const type = (Math.random() < 0.5) ? "flag2cap" : "cap2flag";
-    const distractors = sample(COUNTRIES.filter(x=>x!==country), 3);
+    const distractors = pickDistractors(country, DISTRACT, type);
     const options = shuffle([country, ...distractors]);
     return { country, type, options };
   });
@@ -333,11 +361,10 @@ function renderQuestion(){
   $("scoreNow").textContent = score;
   $("pbar").style.width = (idx/TOTAL*100) + "%";
   $("fb").textContent = ""; $("fb").className = "fb";
-  const nextBtn = $("nextBtn");
-  nextBtn.classList.add("hidden");
+  $("nextBtn").classList.add("hidden");
+  window.scrollTo(0, 0);
 
-  const stage = $("stage");
-  const opts = $("opts");
+  const stage = $("stage"), opts = $("opts");
   opts.innerHTML = "";
 
   if(type === "flag2cap"){
@@ -372,20 +399,18 @@ function renderQuestion(){
 function choose(btn, chosen, correct, opts){
   if(answered) return;
   answered = true;
-  const isRight = (chosen === correct);
+  const isRight = (chosen.c === correct.c);
   if(isRight) score++;
 
-  // 全ボタンを無効化し、正解／誤答をマーク
   Array.from(opts.children).forEach((b, i) => {
     b.disabled = true;
     const o = questions[idx].options[i];
-    if(o === correct) b.classList.add("correct");
+    if(o.c === correct.c) b.classList.add("correct");
     else if(b === btn) b.classList.add("wrong");
     else b.classList.add("dim");
   });
 
-  const fb = $("fb");
-  const q = questions[idx];
+  const fb = $("fb"), q = questions[idx];
   const ansText = (q.type === "flag2cap")
     ? `${correct.n} の首都は ${correct.cap}`
     : `${correct.cap} は ${correct.n} の首都`;
@@ -407,13 +432,14 @@ function choose(btn, chosen, correct, opts){
 
 function next(){
   idx++;
-  if(idx >= TOTAL){ showResult(); }
+  if(idx >= TOTAL) showResult();
   else renderQuestion();
 }
 
 function showResult(){
   quizScreen.classList.add("hidden");
   resultScreen.classList.remove("hidden");
+  window.scrollTo(0, 0);
   $("finalScore").textContent = score;
 
   const rate = Math.round(score/TOTAL*100);
@@ -432,7 +458,6 @@ function showResult(){
     wrongs.forEach(w => {
       const cty = w.country;
       const yourAns = (w.type === "flag2cap") ? w.chosen.cap : w.chosen.n;
-      const rightAns = (w.type === "flag2cap") ? cty.cap : cty.n;
       const item = document.createElement("div");
       item.className = "rv-item";
       item.innerHTML =
