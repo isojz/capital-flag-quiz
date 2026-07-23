@@ -71,8 +71,8 @@
     text-align: center; margin: 6px 0 14px;
   }
   .capital-stage .cap {
-    font-size: 1.9rem; font-weight: 800; color: var(--text);
-    letter-spacing: .02em;
+    font-size: 1.7rem; font-weight: 800; color: var(--text);
+    letter-spacing: .02em; line-height: 1.25;
   }
   .capital-stage .hint { font-size: .78rem; color: var(--muted); margin-top: 6px; }
 
@@ -153,16 +153,16 @@
 <div class="app">
   <header>
     <h1>🌍 首都<span class="em">＆</span>国旗クイズ</h1>
-    <div class="sub">ランダム30問 ・ 10択 ・ 似たものが紛れ込む</div>
+    <div class="sub">ランダム30問 ・ 10択 ・ 全195カ国</div>
   </header>
 
   <!-- START -->
   <section id="startScreen" class="center-screen">
     <div class="big">🗺️</div>
     <p>
-      世界60カ国から<b style="color:var(--text)">ランダムに30問</b>。<br>
-      「国旗 → 首都」と「首都 → 国旗」の2タイプ。<br>
-      選択肢は<b style="color:var(--text)">10択</b>で、<br>
+      世界の国ぜんぶ<b style="color:var(--text)">（約195カ国）</b>から<br>
+      <b style="color:var(--text)">ランダムに30問</b>。<br>
+      「国旗 → 首都」と「首都 → 国旗」の2タイプ、<b style="color:var(--text)">10択</b>。<br>
       <b style="color:var(--gold)">同じ地域の首都</b>や<b style="color:var(--gold)">似た国旗</b>を<br>わざと混ぜてくる。油断禁物。
     </p>
     <button class="btn" id="startBtn">スタート</button>
@@ -200,85 +200,228 @@
 </div>
 
 <script>
-/* ===== 国データ =====
-   n:国名 / c:ISO2(小文字) / cap:首都
+/* ===== 国データ（国連加盟193 ＋ バチカン ＋ パレスチナ = 195カ国） =====
+   n:国名 / c:ISO2(小文字,flagcdn用) / cap:首都
    region:地域(首都問題の「似た誘惑肢」用) / cont:大陸(補充用)
-   flag:国旗の見た目タグ(国旗問題の「似た誘惑肢」用・複数可)
-   複数首都/帰属で揉める国は良問にならないため意図的に除外。 */
+   flag:国旗の見た目タグ(国旗問題の「似た誘惑肢」用・複数可、無ければ[])
+   複数首都/係争国は公式・代表の1つに寄せた（南ア=プレトリア, ボリビア=スクレ,
+   タンザニア=ドドマ, コートジボワール=ヤムスクロ, ミャンマー=ネピドー 等）。 */
 const COUNTRIES = [
-  // --- 東アジア ---
+  // ===== アジア：東アジア =====
   { n:"日本", c:"jp", cap:"東京", region:"east_asia", cont:"asia", flag:["circle","sun"] },
   { n:"中国", c:"cn", cap:"北京", region:"east_asia", cont:"asia", flag:["red_star"] },
   { n:"韓国", c:"kr", cap:"ソウル", region:"east_asia", cont:"asia", flag:["white_field"] },
+  { n:"北朝鮮", c:"kp", cap:"ピョンヤン", region:"east_asia", cont:"asia", flag:["red_blue","star"] },
   { n:"モンゴル", c:"mn", cap:"ウランバートル", region:"east_asia", cont:"asia", flag:["red_blue"] },
-  // --- 東南アジア ---
+  // ===== アジア：東南アジア =====
   { n:"タイ", c:"th", cap:"バンコク", region:"sea", cont:"asia", flag:["stripes_h"] },
   { n:"ベトナム", c:"vn", cap:"ハノイ", region:"sea", cont:"asia", flag:["red_star"] },
   { n:"インドネシア", c:"id", cap:"ジャカルタ", region:"sea", cont:"asia", flag:["red_white_h"] },
-  { n:"フィリピン", c:"ph", cap:"マニラ", region:"sea", cont:"asia", flag:["blue_red"] },
-  { n:"マレーシア", c:"my", cap:"クアラルンプール", region:"sea", cont:"asia", flag:["stripes_star","crescent"] },
+  { n:"フィリピン", c:"ph", cap:"マニラ", region:"sea", cont:"asia", flag:["blue_red","sun"] },
+  { n:"マレーシア", c:"my", cap:"クアラルンプール", region:"sea", cont:"asia", flag:["stars_stripes","crescent"] },
   { n:"シンガポール", c:"sg", cap:"シンガポール", region:"sea", cont:"asia", flag:["red_white_h","crescent"] },
-  // --- 南アジア ---
+  { n:"ミャンマー", c:"mm", cap:"ネピドー", region:"sea", cont:"asia", flag:["tricolor_h","star"] },
+  { n:"カンボジア", c:"kh", cap:"プノンペン", region:"sea", cont:"asia", flag:["emblem"] },
+  { n:"ラオス", c:"la", cap:"ビエンチャン", region:"sea", cont:"asia", flag:["red_blue","circle"] },
+  { n:"ブルネイ", c:"bn", cap:"バンダルスリブガワン", region:"sea", cont:"asia", flag:["yellow","emblem"] },
+  { n:"東ティモール", c:"tl", cap:"ディリ", region:"sea", cont:"asia", flag:["red","triangle"] },
+  // ===== アジア：南アジア =====
   { n:"インド", c:"in", cap:"ニューデリー", region:"south_asia", cont:"asia", flag:["tricolor_h","emblem"] },
-  { n:"ネパール", c:"np", cap:"カトマンズ", region:"south_asia", cont:"asia", flag:["nonrect"] },
   { n:"パキスタン", c:"pk", cap:"イスラマバード", region:"south_asia", cont:"asia", flag:["crescent","green"] },
   { n:"バングラデシュ", c:"bd", cap:"ダッカ", region:"south_asia", cont:"asia", flag:["circle","green"] },
-  // --- 中東・中央アジア ---
+  { n:"ネパール", c:"np", cap:"カトマンズ", region:"south_asia", cont:"asia", flag:["nonrect"] },
+  { n:"スリランカ", c:"lk", cap:"スリジャヤワルダナプラコッテ", region:"south_asia", cont:"asia", flag:["emblem"] },
+  { n:"ブータン", c:"bt", cap:"ティンプー", region:"south_asia", cont:"asia", flag:["emblem"] },
+  { n:"モルディブ", c:"mv", cap:"マレ", region:"south_asia", cont:"asia", flag:["crescent","green"] },
+  { n:"アフガニスタン", c:"af", cap:"カブール", region:"south_asia", cont:"asia", flag:["emblem"] },
+  // ===== アジア：中央アジア =====
+  { n:"カザフスタン", c:"kz", cap:"アスタナ", region:"c_asia", cont:"asia", flag:["blue","sun"] },
+  { n:"ウズベキスタン", c:"uz", cap:"タシケント", region:"c_asia", cont:"asia", flag:["crescent"] },
+  { n:"トルクメニスタン", c:"tm", cap:"アシガバット", region:"c_asia", cont:"asia", flag:["crescent","green"] },
+  { n:"キルギス", c:"kg", cap:"ビシュケク", region:"c_asia", cont:"asia", flag:["red","sun"] },
+  { n:"タジキスタン", c:"tj", cap:"ドゥシャンベ", region:"c_asia", cont:"asia", flag:["tricolor_h"] },
+  // ===== アジア：中東 =====
   { n:"サウジアラビア", c:"sa", cap:"リヤド", region:"mideast", cont:"asia", flag:["green","arabic"] },
   { n:"アラブ首長国連邦", c:"ae", cap:"アブダビ", region:"mideast", cont:"asia", flag:["pan_arab"] },
   { n:"イラン", c:"ir", cap:"テヘラン", region:"mideast", cont:"asia", flag:["tricolor_h","green"] },
   { n:"イラク", c:"iq", cap:"バグダッド", region:"mideast", cont:"asia", flag:["pan_arab","arabic"] },
   { n:"トルコ", c:"tr", cap:"アンカラ", region:"mideast", cont:"asia", flag:["crescent","red"] },
-  { n:"カザフスタン", c:"kz", cap:"アスタナ", region:"c_asia", cont:"asia", flag:["blue","sun"] },
-  // --- ヨーロッパ ---
-  { n:"ロシア", c:"ru", cap:"モスクワ", region:"e_europe", cont:"europe", flag:["tricolor_h"] },
-  { n:"ドイツ", c:"de", cap:"ベルリン", region:"w_europe", cont:"europe", flag:["tricolor_h"] },
-  { n:"フランス", c:"fr", cap:"パリ", region:"w_europe", cont:"europe", flag:["tricolor_v"] },
-  { n:"イギリス", c:"gb", cap:"ロンドン", region:"w_europe", cont:"europe", flag:["unionjack"] },
-  { n:"イタリア", c:"it", cap:"ローマ", region:"s_europe", cont:"europe", flag:["tricolor_v"] },
-  { n:"スペイン", c:"es", cap:"マドリード", region:"s_europe", cont:"europe", flag:["red_yellow"] },
-  { n:"ポルトガル", c:"pt", cap:"リスボン", region:"s_europe", cont:"europe", flag:["green_red","emblem"] },
-  { n:"オランダ", c:"nl", cap:"アムステルダム", region:"w_europe", cont:"europe", flag:["tricolor_h"] },
-  { n:"ベルギー", c:"be", cap:"ブリュッセル", region:"w_europe", cont:"europe", flag:["tricolor_v"] },
-  { n:"スイス", c:"ch", cap:"ベルン", region:"w_europe", cont:"europe", flag:["cross_sq"] },
-  { n:"オーストリア", c:"at", cap:"ウィーン", region:"w_europe", cont:"europe", flag:["tricolor_h"] },
+  { n:"イスラエル", c:"il", cap:"エルサレム", region:"mideast", cont:"asia", flag:["star","white_field"] },
+  { n:"パレスチナ", c:"ps", cap:"ラマラ", region:"mideast", cont:"asia", flag:["pan_arab","triangle"] },
+  { n:"シリア", c:"sy", cap:"ダマスカス", region:"mideast", cont:"asia", flag:["pan_arab"] },
+  { n:"ヨルダン", c:"jo", cap:"アンマン", region:"mideast", cont:"asia", flag:["pan_arab","triangle"] },
+  { n:"レバノン", c:"lb", cap:"ベイルート", region:"mideast", cont:"asia", flag:["red_white_h","emblem"] },
+  { n:"クウェート", c:"kw", cap:"クウェートシティ", region:"mideast", cont:"asia", flag:["pan_arab"] },
+  { n:"カタール", c:"qa", cap:"ドーハ", region:"mideast", cont:"asia", flag:["maroon"] },
+  { n:"バーレーン", c:"bh", cap:"マナーマ", region:"mideast", cont:"asia", flag:["red","serrated"] },
+  { n:"オマーン", c:"om", cap:"マスカット", region:"mideast", cont:"asia", flag:["red","emblem"] },
+  { n:"イエメン", c:"ye", cap:"サヌア", region:"mideast", cont:"asia", flag:["pan_arab"] },
+  // ===== アジア：コーカサス =====
+  { n:"ジョージア", c:"ge", cap:"トビリシ", region:"caucasus", cont:"asia", flag:["cross"] },
+  { n:"アルメニア", c:"am", cap:"エレバン", region:"caucasus", cont:"asia", flag:["tricolor_h"] },
+  { n:"アゼルバイジャン", c:"az", cap:"バクー", region:"caucasus", cont:"asia", flag:["crescent"] },
+  // ===== ヨーロッパ：北欧 =====
   { n:"スウェーデン", c:"se", cap:"ストックホルム", region:"n_europe", cont:"europe", flag:["nordic"] },
   { n:"ノルウェー", c:"no", cap:"オスロ", region:"n_europe", cont:"europe", flag:["nordic"] },
   { n:"デンマーク", c:"dk", cap:"コペンハーゲン", region:"n_europe", cont:"europe", flag:["nordic"] },
   { n:"フィンランド", c:"fi", cap:"ヘルシンキ", region:"n_europe", cont:"europe", flag:["nordic"] },
+  { n:"アイスランド", c:"is", cap:"レイキャビク", region:"n_europe", cont:"europe", flag:["nordic"] },
+  { n:"エストニア", c:"ee", cap:"タリン", region:"n_europe", cont:"europe", flag:["tricolor_h"] },
+  { n:"ラトビア", c:"lv", cap:"リガ", region:"n_europe", cont:"europe", flag:["red_white_h"] },
+  { n:"リトアニア", c:"lt", cap:"ビリニュス", region:"n_europe", cont:"europe", flag:["tricolor_h","pan_africa"] },
+  // ===== ヨーロッパ：西欧 =====
+  { n:"ドイツ", c:"de", cap:"ベルリン", region:"w_europe", cont:"europe", flag:["tricolor_h"] },
+  { n:"フランス", c:"fr", cap:"パリ", region:"w_europe", cont:"europe", flag:["tricolor_v"] },
+  { n:"イギリス", c:"gb", cap:"ロンドン", region:"w_europe", cont:"europe", flag:["unionjack"] },
+  { n:"オランダ", c:"nl", cap:"アムステルダム", region:"w_europe", cont:"europe", flag:["tricolor_h"] },
+  { n:"ベルギー", c:"be", cap:"ブリュッセル", region:"w_europe", cont:"europe", flag:["tricolor_v"] },
+  { n:"スイス", c:"ch", cap:"ベルン", region:"w_europe", cont:"europe", flag:["cross_sq"] },
+  { n:"オーストリア", c:"at", cap:"ウィーン", region:"w_europe", cont:"europe", flag:["tricolor_h"] },
+  { n:"アイルランド", c:"ie", cap:"ダブリン", region:"w_europe", cont:"europe", flag:["tricolor_v"] },
+  { n:"ルクセンブルク", c:"lu", cap:"ルクセンブルク", region:"w_europe", cont:"europe", flag:["tricolor_h"] },
+  { n:"モナコ", c:"mc", cap:"モナコ", region:"w_europe", cont:"europe", flag:["red_white_h"] },
+  { n:"リヒテンシュタイン", c:"li", cap:"ファドゥーツ", region:"w_europe", cont:"europe", flag:["blue_red"] },
+  // ===== ヨーロッパ：南欧 =====
+  { n:"イタリア", c:"it", cap:"ローマ", region:"s_europe", cont:"europe", flag:["tricolor_v"] },
+  { n:"スペイン", c:"es", cap:"マドリード", region:"s_europe", cont:"europe", flag:["red_yellow"] },
+  { n:"ポルトガル", c:"pt", cap:"リスボン", region:"s_europe", cont:"europe", flag:["green_red","emblem"] },
+  { n:"ギリシャ", c:"gr", cap:"アテネ", region:"s_europe", cont:"europe", flag:["stripes_blue"] },
+  { n:"マルタ", c:"mt", cap:"バレッタ", region:"s_europe", cont:"europe", flag:["red_white_v"] },
+  { n:"サンマリノ", c:"sm", cap:"サンマリノ", region:"s_europe", cont:"europe", flag:["emblem"] },
+  { n:"バチカン", c:"va", cap:"バチカン", region:"s_europe", cont:"europe", flag:["emblem","yellow"] },
+  { n:"アンドラ", c:"ad", cap:"アンドラ・ラ・ベリャ", region:"s_europe", cont:"europe", flag:["tricolor_v","emblem"] },
+  { n:"キプロス", c:"cy", cap:"ニコシア", region:"s_europe", cont:"europe", flag:["white_field","emblem"] },
+  // ===== ヨーロッパ：東欧 =====
+  { n:"ロシア", c:"ru", cap:"モスクワ", region:"e_europe", cont:"europe", flag:["tricolor_h"] },
+  { n:"ウクライナ", c:"ua", cap:"キーウ", region:"e_europe", cont:"europe", flag:["blue_yellow"] },
   { n:"ポーランド", c:"pl", cap:"ワルシャワ", region:"e_europe", cont:"europe", flag:["red_white_h"] },
   { n:"チェコ", c:"cz", cap:"プラハ", region:"e_europe", cont:"europe", flag:["triangle"] },
+  { n:"スロバキア", c:"sk", cap:"ブラチスラバ", region:"e_europe", cont:"europe", flag:["tricolor_h","emblem"] },
   { n:"ハンガリー", c:"hu", cap:"ブダペスト", region:"e_europe", cont:"europe", flag:["tricolor_h"] },
-  { n:"ギリシャ", c:"gr", cap:"アテネ", region:"s_europe", cont:"europe", flag:["stripes_blue"] },
-  { n:"アイルランド", c:"ie", cap:"ダブリン", region:"w_europe", cont:"europe", flag:["tricolor_v"] },
-  { n:"ウクライナ", c:"ua", cap:"キーウ", region:"e_europe", cont:"europe", flag:["blue_yellow"] },
   { n:"ルーマニア", c:"ro", cap:"ブカレスト", region:"e_europe", cont:"europe", flag:["tricolor_v"] },
   { n:"ブルガリア", c:"bg", cap:"ソフィア", region:"e_europe", cont:"europe", flag:["tricolor_h"] },
+  { n:"ベラルーシ", c:"by", cap:"ミンスク", region:"e_europe", cont:"europe", flag:["red_green","emblem"] },
+  { n:"モルドバ", c:"md", cap:"キシナウ", region:"e_europe", cont:"europe", flag:["tricolor_v","emblem"] },
+  { n:"スロベニア", c:"si", cap:"リュブリャナ", region:"e_europe", cont:"europe", flag:["tricolor_h","emblem"] },
   { n:"クロアチア", c:"hr", cap:"ザグレブ", region:"e_europe", cont:"europe", flag:["tricolor_h","emblem"] },
+  { n:"ボスニア・ヘルツェゴビナ", c:"ba", cap:"サラエボ", region:"e_europe", cont:"europe", flag:["blue","stars"] },
   { n:"セルビア", c:"rs", cap:"ベオグラード", region:"e_europe", cont:"europe", flag:["tricolor_h","emblem"] },
-  // --- 北米・中米 ---
+  { n:"モンテネグロ", c:"me", cap:"ポドゴリツァ", region:"e_europe", cont:"europe", flag:["red","emblem"] },
+  { n:"北マケドニア", c:"mk", cap:"スコピエ", region:"e_europe", cont:"europe", flag:["red","sun"] },
+  { n:"アルバニア", c:"al", cap:"ティラナ", region:"e_europe", cont:"europe", flag:["red","emblem"] },
+  // ===== アフリカ：北 =====
+  { n:"エジプト", c:"eg", cap:"カイロ", region:"n_africa", cont:"africa", flag:["pan_arab"] },
+  { n:"リビア", c:"ly", cap:"トリポリ", region:"n_africa", cont:"africa", flag:["pan_arab","crescent"] },
+  { n:"チュニジア", c:"tn", cap:"チュニス", region:"n_africa", cont:"africa", flag:["crescent","red"] },
+  { n:"アルジェリア", c:"dz", cap:"アルジェ", region:"n_africa", cont:"africa", flag:["crescent","green"] },
+  { n:"モロッコ", c:"ma", cap:"ラバト", region:"n_africa", cont:"africa", flag:["red","star"] },
+  { n:"スーダン", c:"sd", cap:"ハルツーム", region:"n_africa", cont:"africa", flag:["pan_arab","triangle"] },
+  { n:"南スーダン", c:"ss", cap:"ジュバ", region:"e_africa", cont:"africa", flag:["pan_africa","triangle","star"] },
+  // ===== アフリカ：西 =====
+  { n:"ナイジェリア", c:"ng", cap:"アブジャ", region:"w_africa", cont:"africa", flag:["tricolor_v","green"] },
+  { n:"ガーナ", c:"gh", cap:"アクラ", region:"w_africa", cont:"africa", flag:["pan_africa","star"] },
+  { n:"コートジボワール", c:"ci", cap:"ヤムスクロ", region:"w_africa", cont:"africa", flag:["tricolor_v"] },
+  { n:"セネガル", c:"sn", cap:"ダカール", region:"w_africa", cont:"africa", flag:["pan_africa","star","tricolor_v"] },
+  { n:"マリ", c:"ml", cap:"バマコ", region:"w_africa", cont:"africa", flag:["pan_africa","tricolor_v"] },
+  { n:"ブルキナファソ", c:"bf", cap:"ワガドゥグー", region:"w_africa", cont:"africa", flag:["pan_africa","star"] },
+  { n:"ニジェール", c:"ne", cap:"ニアメー", region:"w_africa", cont:"africa", flag:["tricolor_h","circle"] },
+  { n:"ギニア", c:"gn", cap:"コナクリ", region:"w_africa", cont:"africa", flag:["pan_africa","tricolor_v"] },
+  { n:"ベナン", c:"bj", cap:"ポルトノボ", region:"w_africa", cont:"africa", flag:["pan_africa"] },
+  { n:"トーゴ", c:"tg", cap:"ロメ", region:"w_africa", cont:"africa", flag:["pan_africa","star","stripes_h"] },
+  { n:"シエラレオネ", c:"sl", cap:"フリータウン", region:"w_africa", cont:"africa", flag:["tricolor_h"] },
+  { n:"リベリア", c:"lr", cap:"モンロビア", region:"w_africa", cont:"africa", flag:["stars_stripes"] },
+  { n:"モーリタニア", c:"mr", cap:"ヌアクショット", region:"w_africa", cont:"africa", flag:["crescent","green"] },
+  { n:"ガンビア", c:"gm", cap:"バンジュール", region:"w_africa", cont:"africa", flag:["tricolor_h"] },
+  { n:"ギニアビサウ", c:"gw", cap:"ビサウ", region:"w_africa", cont:"africa", flag:["pan_africa","star"] },
+  { n:"カーボベルデ", c:"cv", cap:"プライア", region:"w_africa", cont:"africa", flag:["blue","stars"] },
+  // ===== アフリカ：中部 =====
+  { n:"カメルーン", c:"cm", cap:"ヤウンデ", region:"c_africa", cont:"africa", flag:["pan_africa","tricolor_v","star"] },
+  { n:"チャド", c:"td", cap:"ンジャメナ", region:"c_africa", cont:"africa", flag:["tricolor_v"] },
+  { n:"中央アフリカ共和国", c:"cf", cap:"バンギ", region:"c_africa", cont:"africa", flag:["stripes_h","star"] },
+  { n:"コンゴ共和国", c:"cg", cap:"ブラザビル", region:"c_africa", cont:"africa", flag:["pan_africa","diagonal"] },
+  { n:"コンゴ民主共和国", c:"cd", cap:"キンシャサ", region:"c_africa", cont:"africa", flag:["blue","diagonal","star"] },
+  { n:"ガボン", c:"ga", cap:"リーブルビル", region:"c_africa", cont:"africa", flag:["tricolor_h"] },
+  { n:"赤道ギニア", c:"gq", cap:"マラボ", region:"c_africa", cont:"africa", flag:["tricolor_h","emblem"] },
+  { n:"サントメ・プリンシペ", c:"st", cap:"サントメ", region:"c_africa", cont:"africa", flag:["pan_africa","stars"] },
+  { n:"アンゴラ", c:"ao", cap:"ルアンダ", region:"c_africa", cont:"africa", flag:["red_black","emblem"] },
+  // ===== アフリカ：東 =====
+  { n:"ケニア", c:"ke", cap:"ナイロビ", region:"e_africa", cont:"africa", flag:["pan_africa","stripes_h","emblem"] },
+  { n:"エチオピア", c:"et", cap:"アディスアベバ", region:"e_africa", cont:"africa", flag:["pan_africa","emblem"] },
+  { n:"タンザニア", c:"tz", cap:"ドドマ", region:"e_africa", cont:"africa", flag:["green","diagonal"] },
+  { n:"ウガンダ", c:"ug", cap:"カンパラ", region:"e_africa", cont:"africa", flag:["stripes_h","emblem"] },
+  { n:"ルワンダ", c:"rw", cap:"キガリ", region:"e_africa", cont:"africa", flag:["blue","sun"] },
+  { n:"ブルンジ", c:"bi", cap:"ギテガ", region:"e_africa", cont:"africa", flag:["diagonal","stars"] },
+  { n:"ソマリア", c:"so", cap:"モガディシュ", region:"e_africa", cont:"africa", flag:["blue","star"] },
+  { n:"ジブチ", c:"dj", cap:"ジブチ", region:"e_africa", cont:"africa", flag:["star","triangle"] },
+  { n:"エリトリア", c:"er", cap:"アスマラ", region:"e_africa", cont:"africa", flag:["red","triangle","emblem"] },
+  { n:"マダガスカル", c:"mg", cap:"アンタナナリボ", region:"e_africa", cont:"africa", flag:["red_green"] },
+  { n:"モーリシャス", c:"mu", cap:"ポートルイス", region:"e_africa", cont:"africa", flag:["stripes_h"] },
+  { n:"セーシェル", c:"sc", cap:"ビクトリア", region:"e_africa", cont:"africa", flag:["diagonal"] },
+  { n:"コモロ", c:"km", cap:"モロニ", region:"e_africa", cont:"africa", flag:["crescent","stars"] },
+  { n:"マラウイ", c:"mw", cap:"リロングウェ", region:"e_africa", cont:"africa", flag:["stripes_h","sun"] },
+  { n:"ザンビア", c:"zm", cap:"ルサカ", region:"e_africa", cont:"africa", flag:["green","emblem"] },
+  { n:"ジンバブエ", c:"zw", cap:"ハラレ", region:"e_africa", cont:"africa", flag:["stripes_h","emblem"] },
+  { n:"モザンビーク", c:"mz", cap:"マプト", region:"e_africa", cont:"africa", flag:["stripes_h","triangle","star"] },
+  // ===== アフリカ：南部 =====
+  { n:"南アフリカ", c:"za", cap:"プレトリア", region:"s_africa", cont:"africa", flag:["diagonal","emblem"] },
+  { n:"ナミビア", c:"na", cap:"ウィントフック", region:"s_africa", cont:"africa", flag:["diagonal","sun"] },
+  { n:"ボツワナ", c:"bw", cap:"ハボローネ", region:"s_africa", cont:"africa", flag:["blue","stripes_h"] },
+  { n:"レソト", c:"ls", cap:"マセル", region:"s_africa", cont:"africa", flag:["blue","emblem"] },
+  { n:"エスワティニ", c:"sz", cap:"ムババーネ", region:"s_africa", cont:"africa", flag:["stripes_h","emblem"] },
+  // ===== アメリカ：北米 =====
   { n:"アメリカ合衆国", c:"us", cap:"ワシントンD.C.", region:"n_america", cont:"americas", flag:["stars_stripes"] },
   { n:"カナダ", c:"ca", cap:"オタワ", region:"n_america", cont:"americas", flag:["red_white_v","emblem"] },
   { n:"メキシコ", c:"mx", cap:"メキシコシティ", region:"n_america", cont:"americas", flag:["tricolor_v","emblem"] },
-  { n:"キューバ", c:"cu", cap:"ハバナ", region:"n_america", cont:"americas", flag:["stars_stripes","triangle"] },
-  // --- 南米 ---
+  // ===== アメリカ：中米 =====
+  { n:"グアテマラ", c:"gt", cap:"グアテマラシティ", region:"c_america", cont:"americas", flag:["tricolor_v","emblem"] },
+  { n:"ベリーズ", c:"bz", cap:"ベルモパン", region:"c_america", cont:"americas", flag:["blue","emblem"] },
+  { n:"エルサルバドル", c:"sv", cap:"サンサルバドル", region:"c_america", cont:"americas", flag:["tricolor_h_blue","emblem"] },
+  { n:"ホンジュラス", c:"hn", cap:"テグシガルパ", region:"c_america", cont:"americas", flag:["tricolor_h_blue","stars"] },
+  { n:"ニカラグア", c:"ni", cap:"マナグア", region:"c_america", cont:"americas", flag:["tricolor_h_blue","emblem"] },
+  { n:"コスタリカ", c:"cr", cap:"サンホセ", region:"c_america", cont:"americas", flag:["stripes_h"] },
+  { n:"パナマ", c:"pa", cap:"パナマシティ", region:"c_america", cont:"americas", flag:["quad","stars"] },
+  // ===== アメリカ：カリブ =====
+  { n:"キューバ", c:"cu", cap:"ハバナ", region:"caribbean", cont:"americas", flag:["stars_stripes","triangle"] },
+  { n:"ジャマイカ", c:"jm", cap:"キングストン", region:"caribbean", cont:"americas", flag:["cross_diag"] },
+  { n:"ハイチ", c:"ht", cap:"ポルトープランス", region:"caribbean", cont:"americas", flag:["blue_red","emblem"] },
+  { n:"ドミニカ共和国", c:"do", cap:"サントドミンゴ", region:"caribbean", cont:"americas", flag:["cross","emblem"] },
+  { n:"バハマ", c:"bs", cap:"ナッソー", region:"caribbean", cont:"americas", flag:["stripes_h","triangle"] },
+  { n:"バルバドス", c:"bb", cap:"ブリッジタウン", region:"caribbean", cont:"americas", flag:["tricolor_v","emblem"] },
+  { n:"トリニダード・トバゴ", c:"tt", cap:"ポートオブスペイン", region:"caribbean", cont:"americas", flag:["diagonal"] },
+  { n:"アンティグア・バーブーダ", c:"ag", cap:"セントジョンズ", region:"caribbean", cont:"americas", flag:["sun","triangle"] },
+  { n:"ドミニカ国", c:"dm", cap:"ロゾー", region:"caribbean", cont:"americas", flag:["cross","emblem"] },
+  { n:"セントルシア", c:"lc", cap:"カストリーズ", region:"caribbean", cont:"americas", flag:["blue","triangle"] },
+  { n:"セントビンセント・グレナディーン", c:"vc", cap:"キングスタウン", region:"caribbean", cont:"americas", flag:["tricolor_v","emblem"] },
+  { n:"グレナダ", c:"gd", cap:"セントジョージズ", region:"caribbean", cont:"americas", flag:["red","emblem"] },
+  { n:"セントクリストファー・ネービス", c:"kn", cap:"バセテール", region:"caribbean", cont:"americas", flag:["diagonal","stars"] },
+  // ===== アメリカ：南米 =====
   { n:"ブラジル", c:"br", cap:"ブラジリア", region:"s_america", cont:"americas", flag:["green","globe"] },
   { n:"アルゼンチン", c:"ar", cap:"ブエノスアイレス", region:"s_america", cont:"americas", flag:["stripes_blue","sun"] },
   { n:"チリ", c:"cl", cap:"サンティアゴ", region:"s_america", cont:"americas", flag:["stars_stripes"] },
   { n:"ペルー", c:"pe", cap:"リマ", region:"s_america", cont:"americas", flag:["red_white_v"] },
-  { n:"コロンビア", c:"co", cap:"ボゴタ", region:"s_america", cont:"americas", flag:["stripes_yellow"] },
-  { n:"ベネズエラ", c:"ve", cap:"カラカス", region:"s_america", cont:"americas", flag:["tricolor_h_yellow"] },
-  // --- アフリカ ---
-  { n:"エジプト", c:"eg", cap:"カイロ", region:"africa", cont:"africa", flag:["pan_arab"] },
-  { n:"ナイジェリア", c:"ng", cap:"アブジャ", region:"africa", cont:"africa", flag:["tricolor_v_green"] },
-  { n:"ケニア", c:"ke", cap:"ナイロビ", region:"africa", cont:"africa", flag:["pan_africa","stripes_h"] },
-  { n:"エチオピア", c:"et", cap:"アディスアベバ", region:"africa", cont:"africa", flag:["pan_africa","emblem"] },
-  { n:"モロッコ", c:"ma", cap:"ラバト", region:"africa", cont:"africa", flag:["red","star"] },
-  { n:"アルジェリア", c:"dz", cap:"アルジェ", region:"africa", cont:"africa", flag:["crescent","green"] },
-  { n:"ガーナ", c:"gh", cap:"アクラ", region:"africa", cont:"africa", flag:["pan_africa","star"] },
-  // --- オセアニア ---
-  { n:"オーストラリア", c:"au", cap:"キャンベラ", region:"oceania", cont:"oceania", flag:["unionjack"] },
-  { n:"ニュージーランド", c:"nz", cap:"ウェリントン", region:"oceania", cont:"oceania", flag:["unionjack"] }
+  { n:"コロンビア", c:"co", cap:"ボゴタ", region:"s_america", cont:"americas", flag:["tricolor_h_yellow"] },
+  { n:"ベネズエラ", c:"ve", cap:"カラカス", region:"s_america", cont:"americas", flag:["tricolor_h_yellow","stars"] },
+  { n:"エクアドル", c:"ec", cap:"キト", region:"s_america", cont:"americas", flag:["tricolor_h_yellow","emblem"] },
+  { n:"ボリビア", c:"bo", cap:"スクレ", region:"s_america", cont:"americas", flag:["tricolor_h","emblem"] },
+  { n:"パラグアイ", c:"py", cap:"アスンシオン", region:"s_america", cont:"americas", flag:["tricolor_h","emblem"] },
+  { n:"ウルグアイ", c:"uy", cap:"モンテビデオ", region:"s_america", cont:"americas", flag:["stars_stripes","sun"] },
+  { n:"ガイアナ", c:"gy", cap:"ジョージタウン", region:"s_america", cont:"americas", flag:["triangle"] },
+  { n:"スリナム", c:"sr", cap:"パラマリボ", region:"s_america", cont:"americas", flag:["stripes_h","star"] },
+  // ===== オセアニア =====
+  { n:"オーストラリア", c:"au", cap:"キャンベラ", region:"oceania", cont:"oceania", flag:["unionjack","stars"] },
+  { n:"ニュージーランド", c:"nz", cap:"ウェリントン", region:"oceania", cont:"oceania", flag:["unionjack","stars"] },
+  { n:"パプアニューギニア", c:"pg", cap:"ポートモレスビー", region:"oceania", cont:"oceania", flag:["diagonal","stars"] },
+  { n:"フィジー", c:"fj", cap:"スバ", region:"oceania", cont:"oceania", flag:["unionjack","emblem"] },
+  { n:"ソロモン諸島", c:"sb", cap:"ホニアラ", region:"oceania", cont:"oceania", flag:["diagonal","stars"] },
+  { n:"バヌアツ", c:"vu", cap:"ポートビラ", region:"oceania", cont:"oceania", flag:["emblem"] },
+  { n:"サモア", c:"ws", cap:"アピア", region:"oceania", cont:"oceania", flag:["red","stars"] },
+  { n:"トンガ", c:"to", cap:"ヌクアロファ", region:"oceania", cont:"oceania", flag:["red","cross"] },
+  { n:"キリバス", c:"ki", cap:"タラワ", region:"oceania", cont:"oceania", flag:["emblem","sun"] },
+  { n:"ミクロネシア連邦", c:"fm", cap:"パリキール", region:"oceania", cont:"oceania", flag:["blue","stars"] },
+  { n:"マーシャル諸島", c:"mh", cap:"マジュロ", region:"oceania", cont:"oceania", flag:["blue","diagonal"] },
+  { n:"パラオ", c:"pw", cap:"ンゲルルムッド", region:"oceania", cont:"oceania", flag:["blue","circle"] },
+  { n:"ナウル", c:"nr", cap:"ヤレン", region:"oceania", cont:"oceania", flag:["blue","star"] },
+  { n:"ツバル", c:"tv", cap:"フナフティ", region:"oceania", cont:"oceania", flag:["unionjack","stars"] }
 ];
 
 const TOTAL = 30;
