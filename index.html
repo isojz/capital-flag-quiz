@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>首都＆国旗クイズ 30問</title>
+<style>
+  :root {
+    --bg: #10142b;
+    --panel: #1b2140;
+    --cell: #242b52;
+    --cell-press: #2f3868;
+    --mint: #2ee6a8;
+    --gold: #f5b433;
+    --red: #ff6b7a;
+    --green: #17604a;
+    --green-line: #2ee6a8;
+    --red-bg: #5a2333;
+    --text: #eef0fb;
+    --muted: #8f96bd;
+    --line-soft: #2c3460;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg) !important; }
+  body {
+    font-family: "Hiragino Sans", "Yu Gothic UI", "Segoe UI", system-ui, sans-serif;
+    color: var(--text);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .app {
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 16px 14px 40px;
+    min-height: 100vh;
+  }
+  header { text-align: center; padding: 8px 0 4px; }
+  h1 { font-size: 1.2rem; letter-spacing: .06em; font-weight: 800; }
+  h1 .em { color: var(--gold); }
+  .sub { color: var(--muted); font-size: .74rem; margin-top: 5px; letter-spacing: .04em; }
+
+  /* ---- progress ---- */
+  .topbar {
+    display: flex; align-items: center; gap: 10px;
+    margin: 16px 0 10px;
+  }
+  .pbar-wrap { flex: 1; height: 8px; background: var(--cell); border-radius: 99px; overflow: hidden; }
+  .pbar { height: 100%; width: 0; background: linear-gradient(90deg, var(--mint), var(--gold)); transition: width .3s ease; }
+  .counter { font-size: .82rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .counter b { color: var(--text); }
+  .score-chip { font-size: .82rem; color: var(--mint); font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* ---- card ---- */
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line-soft);
+    border-radius: 16px;
+    padding: 20px 16px 18px;
+    margin-top: 6px;
+  }
+  .qtype { text-align: center; font-size: .72rem; color: var(--muted); letter-spacing: .1em; margin-bottom: 12px; }
+  .qtype b { color: var(--gold); }
+
+  .flag-stage { display: flex; justify-content: center; margin: 4px 0 16px; }
+  .flag-stage img {
+    width: 200px; max-width: 68vw; height: auto;
+    border-radius: 8px;
+    border: 1px solid var(--line-soft);
+    box-shadow: 0 6px 20px rgba(0,0,0,.4);
+    background: #fff;
+  }
+  .capital-stage {
+    text-align: center; margin: 8px 0 18px;
+  }
+  .capital-stage .cap {
+    font-size: 1.9rem; font-weight: 800; color: var(--text);
+    letter-spacing: .02em;
+  }
+  .capital-stage .hint { font-size: .78rem; color: var(--muted); margin-top: 6px; }
+
+  .ask { text-align: center; font-size: 1rem; font-weight: 700; margin-bottom: 14px; color: var(--text); }
+
+  /* ---- text options ---- */
+  .opts { display: flex; flex-direction: column; gap: 10px; }
+  .opt {
+    background: var(--cell);
+    border: 1.5px solid var(--line-soft);
+    color: var(--text);
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 1rem; font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+    transition: background .12s, border-color .12s, transform .05s;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .opt:active { transform: scale(.985); }
+  .opt .badge { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--muted); flex: none; display: grid; place-items: center; font-size: .8rem; }
+
+  /* ---- flag options (grid) ---- */
+  .opts.flags { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .opts.flags .opt { padding: 10px; justify-content: center; }
+  .opts.flags .opt img { width: 100%; height: auto; border-radius: 6px; background: #fff; pointer-events: none; }
+
+  .opt.correct { background: var(--green); border-color: var(--green-line); }
+  .opt.wrong { background: var(--red-bg); border-color: var(--red); }
+  .opt.dim { opacity: .45; }
+  .opt[disabled] { cursor: default; }
+
+  /* ---- feedback + next ---- */
+  .fb { text-align: center; min-height: 24px; margin: 16px 0 4px; font-weight: 800; font-size: 1rem; }
+  .fb.ok { color: var(--mint); }
+  .fb.ng { color: var(--red); }
+  .fb .ans { display: block; font-size: .82rem; color: var(--muted); font-weight: 600; margin-top: 4px; }
+
+  .btn {
+    width: 100%;
+    background: linear-gradient(90deg, var(--mint), #24c58f);
+    color: #06251b;
+    border: none; border-radius: 12px;
+    padding: 15px; font-size: 1.02rem; font-weight: 800;
+    cursor: pointer; letter-spacing: .04em;
+    margin-top: 10px;
+    transition: transform .05s, filter .12s;
+  }
+  .btn:active { transform: scale(.99); }
+  .btn.ghost { background: var(--cell); color: var(--text); border: 1px solid var(--line-soft); }
+  .btn:disabled { filter: grayscale(.5) brightness(.7); cursor: default; }
+
+  /* ---- start / result ---- */
+  .center-screen { text-align: center; padding: 30px 6px; }
+  .center-screen .big { font-size: 3.2rem; margin-bottom: 8px; }
+  .center-screen p { color: var(--muted); font-size: .9rem; line-height: 1.7; margin: 10px 0 22px; }
+  .result-score { font-size: 3.4rem; font-weight: 900; color: var(--gold); font-variant-numeric: tabular-nums; }
+  .result-score small { font-size: 1.3rem; color: var(--muted); font-weight: 700; }
+  .result-msg { font-size: 1.05rem; font-weight: 800; margin: 6px 0 4px; }
+  .result-rate { color: var(--muted); font-size: .85rem; margin-bottom: 20px; }
+
+  .review { text-align: left; margin-top: 22px; }
+  .review h3 { font-size: .82rem; color: var(--muted); letter-spacing: .08em; margin-bottom: 10px; text-align: center; }
+  .rv-item {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--panel); border: 1px solid var(--line-soft);
+    border-radius: 10px; padding: 9px 12px; margin-bottom: 8px;
+  }
+  .rv-item img { width: 44px; height: auto; border-radius: 4px; background: #fff; flex: none; }
+  .rv-txt { font-size: .84rem; line-height: 1.45; }
+  .rv-txt .cty { font-weight: 800; }
+  .rv-txt .good { color: var(--mint); }
+  .rv-txt .bad { color: var(--red); text-decoration: line-through; opacity: .8; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>🌍 首都<span class="em">＆</span>国旗クイズ</h1>
+    <div class="sub">ランダム30問 ・ 国旗と首都を当てよう</div>
+  </header>
+
+  <!-- START -->
+  <section id="startScreen" class="center-screen">
+    <div class="big">🗺️</div>
+    <p>
+      世界60カ国から<b style="color:var(--text)">ランダムに30問</b>。<br>
+      「国旗 → 首都」と「首都 → 国旗」の<br>2タイプを混ぜて出題します。<br>
+      4択でサクッと腕試し。
+    </p>
+    <button class="btn" id="startBtn">スタート</button>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="quizScreen" class="hidden">
+    <div class="topbar">
+      <span class="counter"><b id="qNow">1</b> / 30</span>
+      <div class="pbar-wrap"><div class="pbar" id="pbar"></div></div>
+      <span class="score-chip">⭐<span id="scoreNow">0</span></span>
+    </div>
+
+    <div class="card">
+      <div class="qtype" id="qType"></div>
+      <div id="stage"></div>
+      <div class="ask" id="ask"></div>
+      <div class="opts" id="opts"></div>
+      <div class="fb" id="fb"></div>
+      <button class="btn hidden" id="nextBtn"></button>
+    </div>
+  </section>
+
+  <!-- RESULT -->
+  <section id="resultScreen" class="hidden center-screen">
+    <div class="result-score"><span id="finalScore">0</span><small> / 30</small></div>
+    <div class="result-msg" id="resultMsg"></div>
+    <div class="result-rate" id="resultRate"></div>
+    <button class="btn" id="retryBtn">もう一度チャレンジ</button>
+    <div class="review hidden" id="review">
+      <h3>― まちがえた問題の復習 ―</h3>
+      <div id="reviewList"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+/* ===== 国データ（国名 / ISO2小文字 / 首都） =====
+   複数首都・帰属で議論のある国（イスラエル/南ア/ボリビア/スリランカ/タンザニア等）は
+   良問にならないため意図的に除外。首都は「引っかけ」になる正確な公式首都。 */
+const COUNTRIES = [
+  { n:"日本", c:"jp", cap:"東京" },
+  { n:"中国", c:"cn", cap:"北京" },
+  { n:"韓国", c:"kr", cap:"ソウル" },
+  { n:"インド", c:"in", cap:"ニューデリー" },
+  { n:"タイ", c:"th", cap:"バンコク" },
+  { n:"ベトナム", c:"vn", cap:"ハノイ" },
+  { n:"インドネシア", c:"id", cap:"ジャカルタ" },
+  { n:"フィリピン", c:"ph", cap:"マニラ" },
+  { n:"マレーシア", c:"my", cap:"クアラルンプール" },
+  { n:"シンガポール", c:"sg", cap:"シンガポール" },
+  { n:"モンゴル", c:"mn", cap:"ウランバートル" },
+  { n:"ネパール", c:"np", cap:"カトマンズ" },
+  { n:"パキスタン", c:"pk", cap:"イスラマバード" },
+  { n:"バングラデシュ", c:"bd", cap:"ダッカ" },
+  { n:"サウジアラビア", c:"sa", cap:"リヤド" },
+  { n:"アラブ首長国連邦", c:"ae", cap:"アブダビ" },
+  { n:"イラン", c:"ir", cap:"テヘラン" },
+  { n:"イラク", c:"iq", cap:"バグダッド" },
+  { n:"トルコ", c:"tr", cap:"アンカラ" },
+  { n:"カザフスタン", c:"kz", cap:"アスタナ" },
+  { n:"ロシア", c:"ru", cap:"モスクワ" },
+  { n:"ドイツ", c:"de", cap:"ベルリン" },
+  { n:"フランス", c:"fr", cap:"パリ" },
+  { n:"イギリス", c:"gb", cap:"ロンドン" },
+  { n:"イタリア", c:"it", cap:"ローマ" },
+  { n:"スペイン", c:"es", cap:"マドリード" },
+  { n:"ポルトガル", c:"pt", cap:"リスボン" },
+  { n:"オランダ", c:"nl", cap:"アムステルダム" },
+  { n:"ベルギー", c:"be", cap:"ブリュッセル" },
+  { n:"スイス", c:"ch", cap:"ベルン" },
+  { n:"オーストリア", c:"at", cap:"ウィーン" },
+  { n:"スウェーデン", c:"se", cap:"ストックホルム" },
+  { n:"ノルウェー", c:"no", cap:"オスロ" },
+  { n:"デンマーク", c:"dk", cap:"コペンハーゲン" },
+  { n:"フィンランド", c:"fi", cap:"ヘルシンキ" },
+  { n:"ポーランド", c:"pl", cap:"ワルシャワ" },
+  { n:"チェコ", c:"cz", cap:"プラハ" },
+  { n:"ハンガリー", c:"hu", cap:"ブダペスト" },
+  { n:"ギリシャ", c:"gr", cap:"アテネ" },
+  { n:"アイルランド", c:"ie", cap:"ダブリン" },
+  { n:"ウクライナ", c:"ua", cap:"キーウ" },
+  { n:"ルーマニア", c:"ro", cap:"ブカレスト" },
+  { n:"ブルガリア", c:"bg", cap:"ソフィア" },
+  { n:"クロアチア", c:"hr", cap:"ザグレブ" },
+  { n:"セルビア", c:"rs", cap:"ベオグラード" },
+  { n:"アメリカ合衆国", c:"us", cap:"ワシントンD.C." },
+  { n:"カナダ", c:"ca", cap:"オタワ" },
+  { n:"メキシコ", c:"mx", cap:"メキシコシティ" },
+  { n:"ブラジル", c:"br", cap:"ブラジリア" },
+  { n:"アルゼンチン", c:"ar", cap:"ブエノスアイレス" },
+  { n:"チリ", c:"cl", cap:"サンティアゴ" },
+  { n:"ペルー", c:"pe", cap:"リマ" },
+  { n:"コロンビア", c:"co", cap:"ボゴタ" },
+  { n:"ベネズエラ", c:"ve", cap:"カラカス" },
+  { n:"キューバ", c:"cu", cap:"ハバナ" },
+  { n:"エジプト", c:"eg", cap:"カイロ" },
+  { n:"ナイジェリア", c:"ng", cap:"アブジャ" },
+  { n:"ケニア", c:"ke", cap:"ナイロビ" },
+  { n:"エチオピア", c:"et", cap:"アディスアベバ" },
+  { n:"モロッコ", c:"ma", cap:"ラバト" },
+  { n:"アルジェリア", c:"dz", cap:"アルジェ" },
+  { n:"ガーナ", c:"gh", cap:"アクラ" },
+  { n:"オーストラリア", c:"au", cap:"キャンベラ" },
+  { n:"ニュージーランド", c:"nz", cap:"ウェリントン" }
+];
+
+const TOTAL = 30;
+const flagUrl = (code, w) => `https://flagcdn.com/w${w||320}/${code}.png`;
+
+// --- utils ---
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+function sample(pool, n, exclude){
+  const picked = [];
+  const src = shuffle(pool);
+  for(const item of src){
+    if(picked.length>=n) break;
+    if(exclude && exclude.includes(item)) continue;
+    picked.push(item);
+  }
+  return picked;
+}
+
+// --- state ---
+let questions = [];
+let idx = 0;
+let score = 0;
+let answered = false;
+const wrongs = [];
+
+// --- build questions ---
+function buildQuestions(){
+  const targets = shuffle(COUNTRIES).slice(0, TOTAL);
+  return targets.map((country, i) => {
+    // タイプを交互＋ランダムで散らす（偏り防止）
+    const type = (Math.random() < 0.5) ? "flag2cap" : "cap2flag";
+    const distractors = sample(COUNTRIES.filter(x=>x!==country), 3);
+    const options = shuffle([country, ...distractors]);
+    return { country, type, options };
+  });
+}
+
+// --- DOM ---
+const $ = id => document.getElementById(id);
+const startScreen = $("startScreen"), quizScreen = $("quizScreen"), resultScreen = $("resultScreen");
+
+function startQuiz(){
+  questions = buildQuestions();
+  idx = 0; score = 0; wrongs.length = 0;
+  startScreen.classList.add("hidden");
+  resultScreen.classList.add("hidden");
+  quizScreen.classList.remove("hidden");
+  renderQuestion();
+}
+
+function renderQuestion(){
+  answered = false;
+  const q = questions[idx];
+  const { country, type, options } = q;
+
+  $("qNow").textContent = idx+1;
+  $("scoreNow").textContent = score;
+  $("pbar").style.width = (idx/TOTAL*100) + "%";
+  $("fb").textContent = ""; $("fb").className = "fb";
+  const nextBtn = $("nextBtn");
+  nextBtn.classList.add("hidden");
+
+  const stage = $("stage");
+  const opts = $("opts");
+  opts.innerHTML = "";
+
+  if(type === "flag2cap"){
+    $("qType").innerHTML = "国旗を見て <b>首都</b> を当てる";
+    stage.innerHTML = `<div class="flag-stage"><img src="${flagUrl(country.c,320)}" alt="国旗"
+        onerror="this.style.opacity=.3;this.alt='画像読込失敗'"></div>`;
+    $("ask").textContent = "この国の首都は？";
+    opts.className = "opts";
+    options.forEach(o => {
+      const b = document.createElement("button");
+      b.className = "opt";
+      b.innerHTML = `<span class="badge">●</span><span>${o.cap}</span>`;
+      b.onclick = () => choose(b, o, country, opts);
+      opts.appendChild(b);
+    });
+  } else {
+    $("qType").innerHTML = "首都を見て <b>国旗</b> を当てる";
+    stage.innerHTML = `<div class="capital-stage"><div class="cap">${country.cap}</div>
+        <div class="hint">が首都の国は？</div></div>`;
+    $("ask").textContent = "";
+    opts.className = "opts flags";
+    options.forEach(o => {
+      const b = document.createElement("button");
+      b.className = "opt";
+      b.innerHTML = `<img src="${flagUrl(o.c,320)}" alt="${o.n}" onerror="this.style.opacity=.3">`;
+      b.onclick = () => choose(b, o, country, opts);
+      opts.appendChild(b);
+    });
+  }
+}
+
+function choose(btn, chosen, correct, opts){
+  if(answered) return;
+  answered = true;
+  const isRight = (chosen === correct);
+  if(isRight) score++;
+
+  // 全ボタンを無効化し、正解／誤答をマーク
+  Array.from(opts.children).forEach((b, i) => {
+    b.disabled = true;
+    const o = questions[idx].options[i];
+    if(o === correct) b.classList.add("correct");
+    else if(b === btn) b.classList.add("wrong");
+    else b.classList.add("dim");
+  });
+
+  const fb = $("fb");
+  const q = questions[idx];
+  const ansText = (q.type === "flag2cap")
+    ? `${correct.n} の首都は ${correct.cap}`
+    : `${correct.cap} は ${correct.n} の首都`;
+  if(isRight){
+    fb.className = "fb ok";
+    fb.innerHTML = `正解！ <span class="ans">${ansText}</span>`;
+  } else {
+    fb.className = "fb ng";
+    fb.innerHTML = `残念… <span class="ans">正解：${ansText}</span>`;
+    wrongs.push({ country: correct, chosen, type: q.type });
+  }
+  $("scoreNow").textContent = score;
+  $("pbar").style.width = ((idx+1)/TOTAL*100) + "%";
+
+  const nextBtn = $("nextBtn");
+  nextBtn.classList.remove("hidden");
+  nextBtn.textContent = (idx < TOTAL-1) ? "次の問題 →" : "結果を見る 🏁";
+}
+
+function next(){
+  idx++;
+  if(idx >= TOTAL){ showResult(); }
+  else renderQuestion();
+}
+
+function showResult(){
+  quizScreen.classList.add("hidden");
+  resultScreen.classList.remove("hidden");
+  $("finalScore").textContent = score;
+
+  const rate = Math.round(score/TOTAL*100);
+  $("resultRate").textContent = `正答率 ${rate}%`;
+  let msg;
+  if(score === TOTAL) msg = "🏆 パーフェクト！地理の達人";
+  else if(score >= 25) msg = "🎉 すばらしい！かなりの物知り";
+  else if(score >= 18) msg = "👍 なかなかの成績";
+  else if(score >= 10) msg = "📚 もう一歩、復習しよう";
+  else msg = "🌱 これから覚えていこう";
+  $("resultMsg").textContent = msg;
+
+  const review = $("review"), list = $("reviewList");
+  if(wrongs.length){
+    list.innerHTML = "";
+    wrongs.forEach(w => {
+      const cty = w.country;
+      const yourAns = (w.type === "flag2cap") ? w.chosen.cap : w.chosen.n;
+      const rightAns = (w.type === "flag2cap") ? cty.cap : cty.n;
+      const item = document.createElement("div");
+      item.className = "rv-item";
+      item.innerHTML =
+        `<img src="${flagUrl(cty.c,160)}" alt="${cty.n}" onerror="this.style.opacity=.3">
+         <div class="rv-txt">
+           <span class="cty">${cty.n}</span> ／ 首都 <span class="good">${cty.cap}</span><br>
+           <span class="bad">あなたの回答：${yourAns}</span>
+         </div>`;
+      list.appendChild(item);
+    });
+    review.classList.remove("hidden");
+  } else {
+    review.classList.add("hidden");
+  }
+}
+
+// --- events ---
+$("startBtn").onclick = startQuiz;
+$("retryBtn").onclick = startQuiz;
+$("nextBtn").onclick = next;
+</script>
+</body>
+</html>
