@@ -44,6 +44,28 @@
   }
   .pbar-wrap { flex: 1; height: 8px; background: var(--cell); border-radius: 99px; overflow: hidden; }
   .pbar { height: 100%; width: 0; background: linear-gradient(90deg, var(--mint), var(--gold)); transition: width .3s ease; }
+  .pbar.hot { background: linear-gradient(90deg, var(--gold), #ff6b3c); }   /* 後半のラストスパート */
+
+  /* ラストスパート突入トースト（1回だけ・控えめ） */
+  #spurt {
+    position: fixed; left: 50%; top: 40%;
+    transform: translate(-50%,-50%);
+    background: linear-gradient(90deg, var(--gold), #ff7a3c);
+    color: #2a1200; font-weight: 900; font-size: 1.25rem;
+    padding: 15px 24px; border-radius: 14px;
+    box-shadow: 0 10px 40px rgba(0,0,0,.5);
+    z-index: 50; text-align: center; letter-spacing: .04em;
+    opacity: 0; pointer-events: none;
+  }
+  #spurt small { display: block; font-size: .74rem; font-weight: 700; margin-top: 4px; opacity: .85; }
+  #spurt.show { animation: spurtPop 1.8s ease forwards; }
+  @keyframes spurtPop {
+    0%   { opacity: 0; transform: translate(-50%,-50%) scale(.85); }
+    14%  { opacity: 1; transform: translate(-50%,-50%) scale(1.05); }
+    28%  { transform: translate(-50%,-50%) scale(1); }
+    72%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%,-50%) scale(1); }
+  }
   .counter { font-size: .82rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .counter b { color: var(--text); }
   .score-chip { font-size: .82rem; color: var(--mint); font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -175,6 +197,7 @@
 
   <!-- QUIZ -->
   <section id="quizScreen" class="hidden">
+    <div id="spurt" class="hidden">🔥 ラストスパート！<small>ここから難問の10問</small></div>
     <div class="topbar">
       <span class="counter"><b id="qNow">1</b> / 30</span>
       <div class="pbar-wrap"><div class="pbar" id="pbar"></div></div>
@@ -517,6 +540,17 @@ function startQuiz(){
   renderQuestion();
 }
 
+// 後半突入時のラストスパート演出（1回だけ・1.8秒で消える）
+let spurtTimer = null;
+function showSpurt(){
+  const s = $("spurt");
+  clearTimeout(spurtTimer);
+  s.classList.remove("hidden", "show");
+  void s.offsetWidth;          // アニメを頭から再生（リトライ時も再発火させる）
+  s.classList.add("show");
+  spurtTimer = setTimeout(() => { s.classList.remove("show"); s.classList.add("hidden"); }, 1900);
+}
+
 // お題(stage)のHTML
 function stageHTML(stage, c){
   if(stage === "flag"){
@@ -556,9 +590,11 @@ function renderQuestion(){
   $("qNow").textContent = idx+1;
   $("scoreNow").textContent = score;
   $("pbar").style.width = (idx/TOTAL*100) + "%";
+  $("pbar").classList.toggle("hot", idx >= EASY_COUNT);   // 後半はバーを温色に
   $("fb").textContent = ""; $("fb").className = "fb";
   $("nextBtn").classList.add("hidden");
   window.scrollTo(0, 0);
+  if(idx === EASY_COUNT) showSpurt();                      // 後半突入で一度だけ演出
 
   $("qType").innerHTML = t.qtype;
   $("stage").innerHTML = stageHTML(t.stage, q.country);
