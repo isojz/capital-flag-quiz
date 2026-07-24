@@ -97,13 +97,19 @@
 
   /* ---- flag options (10択・2列グリッド) ---- */
   .opts.flags { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .opts.flags .opt { padding: 8px; justify-content: center; }
+  .opts.flags .opt { padding: 8px; justify-content: center; flex-direction: column; gap: 6px; }
   .opts.flags .opt img { width: 100%; height: auto; border-radius: 5px; background: #fff; pointer-events: none; display: block; }
 
   .opt.correct { background: var(--green); border-color: var(--green-line); }
   .opt.wrong { background: var(--red-bg); border-color: var(--red); }
-  .opt.dim { opacity: .4; }
   .opt[disabled] { cursor: default; }
+
+  /* 回答後：全選択肢の「正体」を解説表示 */
+  .opt .reveal { margin-left: auto; font-size: .8rem; font-weight: 700; color: var(--muted); white-space: nowrap; }
+  .opts.flags .opt .reveal { margin-left: 0; text-align: center; font-size: .74rem; line-height: 1.35; color: var(--muted); }
+  .opts.flags .opt .reveal .rev-cap { color: var(--text); font-weight: 600; }
+  .opt.correct .reveal, .opt.correct .reveal .rev-cap { color: #d6fff0; }
+  .opt.wrong .reveal, .opt.wrong .reveal .rev-cap { color: #ffd6dc; }
 
   /* ---- feedback + next ---- */
   .fb { text-align: center; min-height: 24px; margin: 16px 0 4px; font-weight: 800; font-size: 1rem; }
@@ -545,15 +551,29 @@ function choose(btn, chosen, correct, opts){
   const isRight = (chosen.c === correct.c);
   if(isRight) score++;
 
+  const q = questions[idx];
   Array.from(opts.children).forEach((b, i) => {
     b.disabled = true;
-    const o = questions[idx].options[i];
+    const o = q.options[i];
     if(o.c === correct.c) b.classList.add("correct");
     else if(b === btn) b.classList.add("wrong");
-    else b.classList.add("dim");
+    // 未選択の誤答はグレーアウトせず、解説を読ませる
+
+    // 全選択肢に「正体」を解説表示
+    if(q.type === "flag2cap"){
+      const rev = document.createElement("span");
+      rev.className = "reveal";
+      rev.textContent = "→ " + o.n;           // この首都はどの国のものか
+      b.appendChild(rev);
+    } else {
+      const rev = document.createElement("div");
+      rev.className = "reveal";
+      rev.innerHTML = `${o.n}<br><span class="rev-cap">${o.cap}</span>`;  // 国名＋首都
+      b.appendChild(rev);
+    }
   });
 
-  const fb = $("fb"), q = questions[idx];
+  const fb = $("fb");
   const ansText = (q.type === "flag2cap")
     ? `${correct.n} の首都は ${correct.cap}`
     : `${correct.cap} は ${correct.n} の首都`;
