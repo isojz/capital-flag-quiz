@@ -430,9 +430,25 @@ const COUNTRIES = [
 ];
 
 const TOTAL = 30;
+const EASY_COUNT = 20;    // 前半＝やさしめ（国名が絡む4タイプ）／残りは難しめ2タイプ
 const CHOICES = 10;       // 選択肢の数
 const DISTRACT = CHOICES - 1;
 const flagUrl = (code, w) => `https://flagcdn.com/w${w||320}/${code}.png`;
+
+/* 出題タイプ定義
+   stage : お題の出し方  (flag=国旗画像 / cap=首都 / name=国名)
+   opt   : 選択肢の種類  (cap=首都 / name=国名 / flag=国旗) ← 誘惑肢の似せ方もこれで決まる
+   qtype : 上部の小見出し / ask : 問題文 */
+const TYPES = {
+  name2cap:  { stage:"name", opt:"cap",  qtype:"国名を見て <b>首都</b> を当てる", ask:"この国の首都は？" },
+  cap2name:  { stage:"cap",  opt:"name", qtype:"首都を見て <b>国名</b> を当てる", ask:"この首都はどの国？" },
+  flag2name: { stage:"flag", opt:"name", qtype:"国旗を見て <b>国名</b> を当てる", ask:"この国旗はどの国？" },
+  name2flag: { stage:"name", opt:"flag", qtype:"国名を見て <b>国旗</b> を当てる", ask:"この国の国旗はどれ？" },
+  flag2cap:  { stage:"flag", opt:"cap",  qtype:"国旗を見て <b>首都</b> を当てる", ask:"この国の首都は？" },
+  cap2flag:  { stage:"cap",  opt:"flag", qtype:"首都を見て <b>国旗</b> を当てる", ask:"この首都の国旗はどれ？" },
+};
+const EASY_TYPES = ["name2cap","cap2name","flag2name","name2flag"];  // 前半：国名が絡む
+const HARD_TYPES = ["flag2cap","cap2flag"];                          // 後半：国名を介さない
 
 // --- utils ---
 function shuffle(arr){
@@ -443,19 +459,19 @@ function shuffle(arr){
   }
   return a;
 }
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 
 /* 似た誘惑肢を優先して n 個集める。
-   tiers = [最優先候補, 次点, 全体] の順に、足りるまで詰める。 */
-function pickDistractors(correct, n, type){
+   optKind==="flag" は「似た国旗」を、それ以外(cap/name)は「同じ地域」を優先。
+   tiers = [最優先候補, 次点=同大陸, 全体] の順に足りるまで詰める。 */
+function pickDistractors(correct, n, optKind){
   const pool = COUNTRIES.filter(x => x.c !== correct.c);
   let tiers;
-  if(type === "cap2flag"){
-    // 国旗を当てる → 見た目が似た国旗を優先
+  if(optKind === "flag"){
     const sameFlag = pool.filter(x => x.flag.some(f => correct.flag.includes(f)));
     const sameCont = pool.filter(x => x.cont === correct.cont);
     tiers = [sameFlag, sameCont, pool];
   } else {
-    // 首都を当てる → 同じ地域の首都を優先
     const sameRegion = pool.filter(x => x.region === correct.region);
     const sameCont   = pool.filter(x => x.cont === correct.cont);
     tiers = [sameRegion, sameCont, pool];
@@ -479,11 +495,12 @@ const wrongs = [];
 
 function buildQuestions(){
   const targets = shuffle(COUNTRIES).slice(0, TOTAL);
-  return targets.map(country => {
-    const type = (Math.random() < 0.5) ? "flag2cap" : "cap2flag";
-    const distractors = pickDistractors(country, DISTRACT, type);
+  return targets.map((country, i) => {
+    const typeKey = (i < EASY_COUNT) ? pick(EASY_TYPES) : pick(HARD_TYPES);
+    const t = TYPES[typeKey];
+    const distractors = pickDistractors(country, DISTRACT, t.opt);
     const options = shuffle([country, ...distractors]);
-    return { country, type, options };
+    return { country, type: typeKey, options };
   });
 }
 
@@ -500,10 +517,41 @@ function startQuiz(){
   renderQuestion();
 }
 
+// お題(stage)のHTML
+function stageHTML(stage, c){
+  if(stage === "flag"){
+    return `<div class="flag-stage"><img src="${flagUrl(c.c,320)}" alt="国旗"
+        onerror="this.style.opacity=.3;this.alt='画像読込失敗'"></div>`;
+  }
+  const txt = (stage === "cap") ? c.cap : c.n;   // cap=首都 / name=国名
+  return `<div class="capital-stage"><div class="cap">${txt}</div></div>`;
+}
+
+// 選択肢ボタンの中身
+function optInner(opt, o){
+  if(opt === "flag") return `<img src="${flagUrl(o.c,320)}" alt="${o.n}" onerror="this.style.opacity=.3">`;
+  const txt = (opt === "cap") ? o.cap : o.n;      // cap=首都 / name=国名
+  return `<span class="badge">●</span><span>${txt}</span>`;
+}
+
+// 回答後、各選択肢に表示する「正体」解説（表面に出ていない情報を補う）
+function revealNode(opt, o){
+  if(opt === "flag"){
+    const d = document.createElement("div");
+    d.className = "reveal";
+    d.innerHTML = `${o.n}<br><span class="rev-cap">${o.cap}</span>`;   // 国旗→国名＋首都
+    return d;
+  }
+  const s = document.createElement("span");
+  s.className = "reveal";
+  s.textContent = "→ " + ((opt === "cap") ? o.n : o.cap);   // 首都択→国名 / 国名択→首都
+  return s;
+}
+
 function renderQuestion(){
   answered = false;
   const q = questions[idx];
-  const { country, type, options } = q;
+  const t = TYPES[q.type];
 
   $("qNow").textContent = idx+1;
   $("scoreNow").textContent = score;
@@ -512,36 +560,20 @@ function renderQuestion(){
   $("nextBtn").classList.add("hidden");
   window.scrollTo(0, 0);
 
-  const stage = $("stage"), opts = $("opts");
-  opts.innerHTML = "";
+  $("qType").innerHTML = t.qtype;
+  $("stage").innerHTML = stageHTML(t.stage, q.country);
+  $("ask").textContent = t.ask;
 
-  if(type === "flag2cap"){
-    $("qType").innerHTML = "国旗を見て <b>首都</b> を当てる";
-    stage.innerHTML = `<div class="flag-stage"><img src="${flagUrl(country.c,320)}" alt="国旗"
-        onerror="this.style.opacity=.3;this.alt='画像読込失敗'"></div>`;
-    $("ask").textContent = "この国の首都は？";
-    opts.className = "opts";
-    options.forEach(o => {
-      const b = document.createElement("button");
-      b.className = "opt";
-      b.innerHTML = `<span class="badge">●</span><span>${o.cap}</span>`;
-      b.onclick = () => choose(b, o, country, opts);
-      opts.appendChild(b);
-    });
-  } else {
-    $("qType").innerHTML = "首都を見て <b>国旗</b> を当てる";
-    stage.innerHTML = `<div class="capital-stage"><div class="cap">${country.cap}</div>
-        <div class="hint">が首都の国は？</div></div>`;
-    $("ask").textContent = "";
-    opts.className = "opts flags";
-    options.forEach(o => {
-      const b = document.createElement("button");
-      b.className = "opt";
-      b.innerHTML = `<img src="${flagUrl(o.c,320)}" alt="${o.n}" onerror="this.style.opacity=.3">`;
-      b.onclick = () => choose(b, o, country, opts);
-      opts.appendChild(b);
-    });
-  }
+  const opts = $("opts");
+  opts.className = (t.opt === "flag") ? "opts flags" : "opts";
+  opts.innerHTML = "";
+  q.options.forEach(o => {
+    const b = document.createElement("button");
+    b.className = "opt";
+    b.innerHTML = optInner(t.opt, o);
+    b.onclick = () => choose(b, o, q.country, opts);
+    opts.appendChild(b);
+  });
 }
 
 function choose(btn, chosen, correct, opts){
@@ -550,39 +582,25 @@ function choose(btn, chosen, correct, opts){
   const isRight = (chosen.c === correct.c);
   if(isRight) score++;
 
-  const q = questions[idx];
+  const q = questions[idx], t = TYPES[q.type];
   Array.from(opts.children).forEach((b, i) => {
     b.disabled = true;
     const o = q.options[i];
     if(o.c === correct.c) b.classList.add("correct");
     else if(b === btn) b.classList.add("wrong");
-    // 未選択の誤答はグレーアウトせず、解説を読ませる
-
-    // 全選択肢に「正体」を解説表示
-    if(q.type === "flag2cap"){
-      const rev = document.createElement("span");
-      rev.className = "reveal";
-      rev.textContent = "→ " + o.n;           // この首都はどの国のものか
-      b.appendChild(rev);
-    } else {
-      const rev = document.createElement("div");
-      rev.className = "reveal";
-      rev.innerHTML = `${o.n}<br><span class="rev-cap">${o.cap}</span>`;  // 国名＋首都
-      b.appendChild(rev);
-    }
+    // 未選択の誤答はグレーアウトせず、全選択肢に解説を付ける
+    b.appendChild(revealNode(t.opt, o));
   });
 
   const fb = $("fb");
-  const ansText = (q.type === "flag2cap")
-    ? `${correct.n} の首都は ${correct.cap}`
-    : `${correct.cap} は ${correct.n} の首都`;
+  const ansText = `${correct.n}（首都：${correct.cap}）`;
   if(isRight){
     fb.className = "fb ok";
     fb.innerHTML = `正解！ <span class="ans">${ansText}</span>`;
   } else {
     fb.className = "fb ng";
     fb.innerHTML = `残念… <span class="ans">正解：${ansText}</span>`;
-    wrongs.push({ country: correct, chosen, type: q.type });
+    wrongs.push({ country: correct, chosen, opt: t.opt });
   }
   $("scoreNow").textContent = score;
   $("pbar").style.width = ((idx+1)/TOTAL*100) + "%";
@@ -619,7 +637,7 @@ function showResult(){
     list.innerHTML = "";
     wrongs.forEach(w => {
       const cty = w.country;
-      const yourAns = (w.type === "flag2cap") ? w.chosen.cap : w.chosen.n;
+      const yourAns = (w.opt === "cap") ? w.chosen.cap : w.chosen.n;  // 首都択なら首都、他は国名
       const item = document.createElement("div");
       item.className = "rv-item";
       item.innerHTML =
