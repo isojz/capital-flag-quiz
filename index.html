@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>首都＆国旗クイズ 30問</title>
+<title>首都＆国旗クイズ｜やさしい・むずかしい</title>
 <style>
   :root {
     --bg: #10142b;
@@ -157,6 +157,27 @@
   .center-screen { text-align: center; padding: 30px 6px; }
   .center-screen .big { font-size: 3.2rem; margin-bottom: 8px; }
   .center-screen p { color: var(--muted); font-size: .9rem; line-height: 1.7; margin: 10px 0 22px; }
+
+  /* ---- 難易度セレクト ---- */
+  .levels { display: flex; flex-direction: column; gap: 12px; }
+  .lvl {
+    display: block; width: 100%; text-align: left;
+    background: var(--panel); border: 1.5px solid var(--line-soft);
+    border-radius: 14px; padding: 16px; cursor: pointer; color: var(--text);
+    transition: transform .05s, filter .12s;
+  }
+  .lvl:active { transform: scale(.99); }
+  .lvl .lvl-name { display: block; font-size: 1.12rem; font-weight: 900; letter-spacing: .04em; }
+  .lvl .lvl-spec { display: block; margin-top: 6px; font-size: .8rem; font-weight: 700; color: var(--text); }
+  .lvl .lvl-desc { display: block; margin-top: 6px; font-size: .76rem; line-height: 1.65; color: var(--muted); }
+  .lvl.easy { border-color: #2c6d57; }
+  .lvl.easy .lvl-name { color: var(--mint); }
+  .lvl.hard { border-color: #7a5122; }
+  .lvl.hard .lvl-name { color: var(--gold); }
+
+  .lvl-chip { font-size: .68rem; font-weight: 800; padding: 4px 9px; border-radius: 99px; white-space: nowrap; }
+  .lvl-chip.easy { background: var(--green); color: #b8ffe6; }
+  .lvl-chip.hard { background: #5a3a18; color: var(--gold); }
   .result-score { font-size: 3.4rem; font-weight: 900; color: var(--gold); font-variant-numeric: tabular-nums; }
   .result-score small { font-size: 1.3rem; color: var(--muted); font-weight: 700; }
   .result-msg { font-size: 1.05rem; font-weight: 800; margin: 6px 0 4px; }
@@ -181,25 +202,39 @@
 <div class="app">
   <header>
     <h1>🌍 首都<span class="em">＆</span>国旗クイズ</h1>
-    <div class="sub">ランダム30問 ・ 10択 ・ 全195カ国</div>
+    <div class="sub" id="subLine">難易度をえらんでスタート</div>
   </header>
 
-  <!-- START -->
+  <!-- START（難易度セレクト） -->
   <section id="startScreen" class="center-screen">
     <div class="big">🗺️</div>
-    <p>
-      世界の国ぜんぶ<b style="color:var(--text)">（約195カ国）</b>から<br>
-      <b style="color:var(--text)">ランダムに30問</b>。<br>
-      「国旗 → 首都」と「首都 → 国旗」の2タイプ、<b style="color:var(--text)">10択</b>。<br>
-    </p>
-    <button class="btn" id="startBtn">スタート</button>
+    <p>世界の国を覚えるクイズ。<br>難易度をえらんでね。</p>
+    <div class="levels">
+      <button class="lvl easy" id="btnEasy">
+        <span class="lvl-name">🌱 やさしい</span>
+        <span class="lvl-spec">よく知られた72カ国 ・ 4択 ・ 20問</span>
+        <span class="lvl-desc">
+          出題は「国名⇄首都」「国名⇄国旗」の4タイプ。<br>
+          まちがいの選択肢は地域バラバラ（似せない）。
+        </span>
+      </button>
+      <button class="lvl hard" id="btnHard">
+        <span class="lvl-name">🔥 むずかしい</span>
+        <span class="lvl-spec">全195カ国 ・ 10択 ・ 30問</span>
+        <span class="lvl-desc">
+          まちがいの選択肢に<b style="color:var(--text)">同じ地域・似た国旗</b>が混ざる。<br>
+          後半10問は<b style="color:var(--text)">国名を介さない</b>「国旗⇄首都」。
+        </span>
+      </button>
+    </div>
   </section>
 
   <!-- QUIZ -->
   <section id="quizScreen" class="hidden">
     <div id="spurt" class="hidden">🔥 ラストスパート！<small>ここから難問の10問</small></div>
     <div class="topbar">
-      <span class="counter"><b id="qNow">1</b> / 30</span>
+      <span class="lvl-chip" id="lvlChip"></span>
+      <span class="counter"><b id="qNow">1</b> / <span id="qTotal">30</span></span>
       <div class="pbar-wrap"><div class="pbar" id="pbar"></div></div>
       <span class="score-chip">⭐<span id="scoreNow">0</span></span>
     </div>
@@ -216,10 +251,11 @@
 
   <!-- RESULT -->
   <section id="resultScreen" class="hidden center-screen">
-    <div class="result-score"><span id="finalScore">0</span><small> / 30</small></div>
+    <div class="result-score"><span id="finalScore">0</span><small> / <span id="resTotal">30</span></small></div>
     <div class="result-msg" id="resultMsg"></div>
     <div class="result-rate" id="resultRate"></div>
     <button class="btn" id="retryBtn">もう一度チャレンジ</button>
+    <button class="btn ghost" id="levelBtn">難易度を変える</button>
     <div class="review hidden" id="review">
       <h3>― まちがえた問題の復習 ―</h3>
       <div id="reviewList"></div>
@@ -452,10 +488,22 @@ const COUNTRIES = [
   { n:"ツバル", c:"tv", cap:"フナフティ", region:"oceania", cont:"oceania", flag:["unionjack","stars"] }
 ];
 
-const TOTAL = 30;
-const EASY_COUNT = 20;    // 前半＝やさしめ（国名が絡む4タイプ）／残りは難しめ2タイプ
-const CHOICES = 10;       // 選択肢の数
-const DISTRACT = CHOICES - 1;
+/* ===== やさしいモードの出題国（日本人によく知られた72カ国） ===== */
+const FAMOUS = new Set([
+  // アジア(24)
+  "jp","cn","kr","kp","mn","th","vn","id","ph","my","sg","mm","kh",
+  "in","pk","bd","np","lk","sa","ae","ir","iq","tr","il",
+  // ヨーロッパ(25)
+  "se","no","dk","fi","is","de","fr","gb","nl","be","ch","at","ie","mc",
+  "it","es","pt","gr","va","ru","ua","pl","cz","hu","ro",
+  // アフリカ(9)
+  "eg","ma","ng","gh","ke","et","tz","za","mg",
+  // アメリカ(11)
+  "us","ca","mx","cu","jm","br","ar","cl","pe","co","ve",
+  // オセアニア(3)
+  "au","nz","fj"
+]);
+
 const flagUrl = (code, w) => `https://flagcdn.com/w${w||320}/${code}.png`;
 
 /* 出題タイプ定義
@@ -470,8 +518,31 @@ const TYPES = {
   flag2cap:  { stage:"flag", opt:"cap",  qtype:"国旗を見て <b>首都</b> を当てる", ask:"この国の首都は？" },
   cap2flag:  { stage:"cap",  opt:"flag", qtype:"首都を見て <b>国旗</b> を当てる", ask:"この首都の国旗はどれ？" },
 };
-const EASY_TYPES = ["name2cap","cap2name","flag2name","name2flag"];  // 前半：国名が絡む
-const HARD_TYPES = ["flag2cap","cap2flag"];                          // 後半：国名を介さない
+const TYPES_WITH_NAME = ["name2cap","cap2name","flag2name","name2flag"];  // 国名が絡む＝手がかり多め
+const TYPES_NO_NAME   = ["flag2cap","cap2flag"];                          // 国名を介さない＝難問
+
+/* ===== 難易度 =====
+   pool     : 出題国と選択肢の母集団
+   choices  : 選択肢の数
+   hardFrom : この問番号から hardTypes に切り替える（Infinity＝切り替えなし）
+   similar  : true＝誘惑肢に「同じ地域／似た国旗」を優先（＝紛らわしくする） */
+const LEVELS = {
+  easy: {
+    key:"easy", label:"やさしい", emoji:"🌱",
+    total: 20, choices: 4, similar: false,
+    types: TYPES_WITH_NAME, hardFrom: Infinity, hardTypes: null,
+    pool: () => COUNTRIES.filter(c => FAMOUS.has(c.c)),
+    sub: "よく知られた72カ国 ・ 4択 ・ 20問",
+  },
+  hard: {
+    key:"hard", label:"むずかしい", emoji:"🔥",
+    total: 30, choices: 10, similar: true,
+    types: TYPES_WITH_NAME, hardFrom: 20, hardTypes: TYPES_NO_NAME,
+    pool: () => COUNTRIES.slice(),
+    sub: "全195カ国 ・ 10択 ・ 30問",
+  },
+};
+let LV = LEVELS.easy;   // 現在の難易度（スタート時に確定）
 
 // --- utils ---
 function shuffle(arr){
@@ -484,13 +555,16 @@ function shuffle(arr){
 }
 function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 
-/* 似た誘惑肢を優先して n 個集める。
-   optKind==="flag" は「似た国旗」を、それ以外(cap/name)は「同じ地域」を優先。
-   tiers = [最優先候補, 次点=同大陸, 全体] の順に足りるまで詰める。 */
-function pickDistractors(correct, n, optKind){
-  const pool = COUNTRIES.filter(x => x.c !== correct.c);
+/* 誘惑肢を n 個集める。
+   similar=false（やさしい）: 母集団からランダム＝地域も国旗もバラバラで見分けやすい
+   similar=true （むずかしい）: optKind==="flag" なら「似た国旗」、他は「同じ地域」を優先。
+                                tiers = [最優先候補, 次点=同大陸, 全体] の順に足りるまで詰める。 */
+function pickDistractors(correct, n, optKind, basePool, similar){
+  const pool = basePool.filter(x => x.c !== correct.c);
   let tiers;
-  if(optKind === "flag"){
+  if(!similar){
+    tiers = [pool];
+  } else if(optKind === "flag"){
     const sameFlag = pool.filter(x => x.flag.some(f => correct.flag.includes(f)));
     const sameCont = pool.filter(x => x.cont === correct.cont);
     tiers = [sameFlag, sameCont, pool];
@@ -517,11 +591,13 @@ let idx = 0, score = 0, answered = false;
 const wrongs = [];
 
 function buildQuestions(){
-  const targets = shuffle(COUNTRIES).slice(0, TOTAL);
+  const pool = LV.pool();
+  const targets = shuffle(pool).slice(0, LV.total);
   return targets.map((country, i) => {
-    const typeKey = (i < EASY_COUNT) ? pick(EASY_TYPES) : pick(HARD_TYPES);
+    const useHard = LV.hardTypes && i >= LV.hardFrom;
+    const typeKey = pick(useHard ? LV.hardTypes : LV.types);
     const t = TYPES[typeKey];
-    const distractors = pickDistractors(country, DISTRACT, t.opt);
+    const distractors = pickDistractors(country, LV.choices - 1, t.opt, pool, LV.similar);
     const options = shuffle([country, ...distractors]);
     return { country, type: typeKey, options };
   });
@@ -531,13 +607,29 @@ function buildQuestions(){
 const $ = id => document.getElementById(id);
 const startScreen = $("startScreen"), quizScreen = $("quizScreen"), resultScreen = $("resultScreen");
 
-function startQuiz(){
+function startQuiz(levelKey){
+  if(levelKey) LV = LEVELS[levelKey];
   questions = buildQuestions();
   idx = 0; score = 0; wrongs.length = 0;
+
+  $("subLine").textContent = `${LV.emoji} ${LV.label} ・ ${LV.sub}`;
+  $("lvlChip").textContent = `${LV.emoji} ${LV.label}`;
+  $("lvlChip").className = "lvl-chip " + LV.key;
+  $("qTotal").textContent = LV.total;
+  $("resTotal").textContent = LV.total;
+
   startScreen.classList.add("hidden");
   resultScreen.classList.add("hidden");
   quizScreen.classList.remove("hidden");
   renderQuestion();
+}
+
+function backToLevelSelect(){
+  $("subLine").textContent = "難易度をえらんでスタート";
+  quizScreen.classList.add("hidden");
+  resultScreen.classList.add("hidden");
+  startScreen.classList.remove("hidden");
+  window.scrollTo(0, 0);
 }
 
 // 後半突入時のラストスパート演出（1回だけ・1.8秒で消える）
@@ -589,12 +681,12 @@ function renderQuestion(){
 
   $("qNow").textContent = idx+1;
   $("scoreNow").textContent = score;
-  $("pbar").style.width = (idx/TOTAL*100) + "%";
-  $("pbar").classList.toggle("hot", idx >= EASY_COUNT);   // 後半はバーを温色に
+  $("pbar").style.width = (idx/LV.total*100) + "%";
+  $("pbar").classList.toggle("hot", idx >= LV.hardFrom);   // 後半はバーを温色に
   $("fb").textContent = ""; $("fb").className = "fb";
   $("nextBtn").classList.add("hidden");
   window.scrollTo(0, 0);
-  if(idx === EASY_COUNT) showSpurt();                      // 後半突入で一度だけ演出
+  if(idx === LV.hardFrom) showSpurt();                     // 後半突入で一度だけ演出（むずかしいのみ）
 
   $("qType").innerHTML = t.qtype;
   $("stage").innerHTML = stageHTML(t.stage, q.country);
@@ -639,16 +731,16 @@ function choose(btn, chosen, correct, opts){
     wrongs.push({ country: correct, chosen, opt: t.opt });
   }
   $("scoreNow").textContent = score;
-  $("pbar").style.width = ((idx+1)/TOTAL*100) + "%";
+  $("pbar").style.width = ((idx+1)/LV.total*100) + "%";
 
   const nextBtn = $("nextBtn");
   nextBtn.classList.remove("hidden");
-  nextBtn.textContent = (idx < TOTAL-1) ? "次の問題 →" : "結果を見る 🏁";
+  nextBtn.textContent = (idx < LV.total-1) ? "次の問題 →" : "結果を見る 🏁";
 }
 
 function next(){
   idx++;
-  if(idx >= TOTAL) showResult();
+  if(idx >= LV.total) showResult();
   else renderQuestion();
 }
 
@@ -658,15 +750,22 @@ function showResult(){
   window.scrollTo(0, 0);
   $("finalScore").textContent = score;
 
-  const rate = Math.round(score/TOTAL*100);
-  $("resultRate").textContent = `正答率 ${rate}%`;
+  const rate = Math.round(score/LV.total*100);
+  $("resultRate").textContent = `${LV.emoji} ${LV.label} ・ 正答率 ${rate}%`;
   let msg;
-  if(score === TOTAL) msg = "🏆 パーフェクト！地理の達人";
-  else if(score >= 25) msg = "🎉 すばらしい！かなりの物知り";
-  else if(score >= 18) msg = "👍 なかなかの成績";
-  else if(score >= 10) msg = "📚 もう一歩、復習しよう";
+  if(score === LV.total) msg = "🏆 パーフェクト！地理の達人";
+  else if(rate >= 83) msg = "🎉 すばらしい！かなりの物知り";
+  else if(rate >= 60) msg = "👍 なかなかの成績";
+  else if(rate >= 33) msg = "📚 もう一歩、復習しよう";
   else msg = "🌱 これから覚えていこう";
   $("resultMsg").textContent = msg;
+
+  // やさしいで高得点なら、むずかしいへの誘導ボタンに変える
+  const lvBtn = $("levelBtn");
+  const promote = (LV.key === "easy" && rate >= 80);
+  lvBtn.textContent = promote ? "🔥 むずかしいに挑戦する" : "難易度を変える";
+  lvBtn.classList.toggle("ghost", !promote);
+  lvBtn.dataset.promote = promote ? "1" : "";
 
   const review = $("review"), list = $("reviewList");
   if(wrongs.length){
@@ -691,8 +790,13 @@ function showResult(){
 }
 
 // --- events ---
-$("startBtn").onclick = startQuiz;
-$("retryBtn").onclick = startQuiz;
+$("btnEasy").onclick = () => startQuiz("easy");
+$("btnHard").onclick = () => startQuiz("hard");
+$("retryBtn").onclick = () => startQuiz();                 // 同じ難易度でもう一度
+$("levelBtn").onclick = function(){
+  if(this.dataset.promote) startQuiz("hard");              // 高得点者はそのまま昇格
+  else backToLevelSelect();
+};
 $("nextBtn").onclick = next;
 </script>
 </body>
